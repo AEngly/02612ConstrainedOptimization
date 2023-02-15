@@ -1,6 +1,6 @@
 % Casadi example 1
 %%
-addpath('casadi-matlabR2015a-v3.5.5')
+addpath('casadi-osx-matlabR2015a-v3.5.5')
 import casadi.*
 
 %%
