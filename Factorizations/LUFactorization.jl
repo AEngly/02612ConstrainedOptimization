@@ -1,4 +1,46 @@
-using LinearAlgebra
+using LinearAlgebra;
+using SparseArrays;
+
+# The documentation can be found here: https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#man-linalg-factorizations
+
+function LUDecomposition(A)
+
+    L,U,p = lu(A)
+    return(L, U, p)
+
+end
+
+function QRDecomposition(A)
+
+    Q,R = qr(A)
+    return(Q, R)
+
+end
+
+function CholeskyFactorization(A)
+
+    F = cholesky(A)
+    L = F.L
+    return(L)
+
+end
+
+# The following works for a sparse matrix
+
+function LDLDecomposition(A)
+
+    A = sparse(A)
+    F = ldlt(A)
+    p = F.p
+    D = F.D
+    L = F.L
+
+    return(L, D, p)
+
+end
+
+# Cholesky
+
 function CholeskyDecomposition(A)
 
     rows, columns = size(A)
@@ -70,10 +112,3 @@ function LinearSolve(A, b, decomposition = "Cholesky")
     end
 
 end
-
-# ----------- EXAMPLE ------------
-
-A = [6 3 4; 3 6 5; 4 5 10]
-b = [1, -7, 4]
-L = CholeskyDecomposition(A)
-x = LinearSolve(A, b)
