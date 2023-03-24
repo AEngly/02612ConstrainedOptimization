@@ -1,5 +1,5 @@
 
-function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(G, g, A, b, x0)
+function [all_xk, mu_star, active_constraints] = QP_ineqBox_primalActiveSet(H, g, A, b, C, dl, du, l, u)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -7,9 +7,9 @@ function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(G, g, A, b, 
 % Type: Primal-Dual Active-Set QP Solver
 %
 % Problem structure:
-%          min  g'*x
-%           x
-%          s.t. A x  = b      (Lagrange multiplier: mu)
+%          min  1/2*x'Hx + g'x
+%           
+%          s.t. bl <= A'x <= ub      (Lagrange multiplier: mu)
 %                 x >= 0      (Lagrange multiplier: lamba)
 %
 % Syntax: [x,info,mu,lambda,iter] = QP_dualActiveSet(g,A,b,x)
@@ -23,18 +23,24 @@ function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(G, g, A, b, 
 %
 % ---------------- IMPLEMENTATION --------------
 
+% We start by defining the KKT-matrix
+
+A_bar = [A C -C eye(length(H)) -eye(length(H))];
+b_bar = [b; dl; -du; l; -u];
+
 optimal = false;
 counter = 1;
 alpha = 0;
 num_tol = 1.0e-10;
 iter = 0;
-verbose = false;
+verbose = true;
 
 % Then we define the initial working set
-xk = x0;
-At = A';
-Wk = A'*x0 - b == 0;
-[n, m] = size(A);
+xk = zeros(length(H), 1);
+A_bar_t = A_bar';
+Wk = A_bar_t*xk - b_bar == 0;
+[n, m] = size(A_bar);
+all_constraints = (1:m)';
 
 % All xk
 all_xk = xk;
@@ -46,17 +52,18 @@ while ~optimal && iter < 10
     % We start with a naive implementation - and later extend to
     % null-space method.
 
-    Ak = At(Wk,:)';
-    bk = b(Wk);
-    gk = G * xk + g;   
+    Ak = A_bar(Wk,:)';
+    bk = b_bar(Wk);
+    gk = H * xk + g;   
     mk = sum(Wk);
 
-    row1 = [G -Ak];
+    row1 = [H -Ak];
     row2 = [-Ak' zeros(mk, mk)];
     LHS = [row1; row2];
     RHS = -[gk; zeros(mk,1)];
 
     p_mu = LHS \ RHS;
+    disp(n);
     p = p_mu(1:n);
     muk = p_mu(n+1:n+mk);
 
@@ -84,8 +91,8 @@ while ~optimal && iter < 10
     else
 
         % Compute the distance to the nearest inactive constraint in the search direction
-        nominator = b(Wk == 0) - At(Wk == 0, :)*xk;
-        denominator = At(Wk == 0, :)*p;
+        nominator = b_bar(Wk == 0) - A_bar_t(Wk == 0, :)*xk;
+        denominator = A_bar_t(Wk == 0, :)*p;
         nominator = nominator(denominator < 0);
         denominator = denominator(denominator < 0);
         alphas = nominator ./ denominator;
