@@ -1,6 +1,8 @@
 
 function [xk, muk] = dualActiveSetQP(G, g, A, b, max_iter, tol)
 
+
+
     % Tolerances in equality checks
     tol1 = tol;
 
