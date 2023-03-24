@@ -23,7 +23,7 @@ function [x, info,z,s, iter] = QP_ineq_box_InteriorPointPDPC(H,g,dl,C,du,l,u,x0,
 % ---------------- IMPLEMENTATION --------------
 
 % TODO
-% Test algorithmn.
+
 % Implement starting point heuristic
 % Setup for general problem formulation
 % Improve performance
@@ -37,8 +37,13 @@ tol_L = 1e-8;
 tol_C = 1e-8;
 tol_mu = 1e-8;
 
+%Find starting point
+[x0,z0,s0] = QP_ineq_box_InteriorPointPDPC_initial_point(H,g,dl,C,du,l,u,x0,z0,s0);
+
+%Check problem size
 n = length(x0);
 
+% Permute matrices
 Cbar = [full(C) full(-C) eye(n,n) -eye(n,n)]; 
 dbar = [-dl; du; -l; u];
 
@@ -49,6 +54,8 @@ rsz = (s0.*z0);
 
 % Setup constants
 mc = length(dbar);
+
+% Complementarity measure
 mu = z0'*s0/mc;
 
 x = x0;
@@ -62,8 +69,11 @@ terminate = (k > itermax | norm(rL)<=tol_L | norm(rC)<=tol_C | abs(mu)<=tol_mu )
 
 while ~terminate
     k= k+1;
+
+    % Compute LDL factorization of modified KKT system
     Czs = Cbar*diag(z./s);
     Hbar = H + Czs*Cbar';
+    % Book mentions modified Cholesky here??
     [L,D,p] = ldl(Hbar,'lower','vector');
 
     %Affine direction
@@ -87,9 +97,9 @@ while ~terminate
     rbarL = rL - Czs * (rC-diag(z)\rbarsz);
     rtemp = [ -rbarL];
 
-    deltax = L'\( D \(L\rtemp(p))); %Might have error
+    deltax(p) = L'\( D \(L\rtemp(p))); %Might have error
     %deltax = deltax';
-    deltaz = -diag(z./s)*Cbar'*deltax + diag(z./s)*(rC-diag(z)\rbarsz);
+    deltaz = -diag(z./s)*Cbar'*deltax' + diag(z./s)*(rC-diag(z)\rbarsz);
     deltas = -diag(z)\rbarsz-diag( s./z )*deltaz;
 
     %compute alpha 
@@ -100,7 +110,7 @@ while ~terminate
     %Update iteration
     nabla = 0.995;
     alphabar = alpha*nabla;
-    x = x + alphabar*deltax;
+    x = x + alphabar*deltax';
     z = z + alphabar*deltaz;
     s = s + alphabar*deltas;
     

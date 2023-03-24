@@ -5,9 +5,9 @@ function [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
 % Type: Primal-Dual Predictor-Corrector Interior-Point QP Solver
 %
 % Problem structure:
-%          min  g'*x
-%           x
-%          s.t. A x  = b      (Lagrange multiplier: mu)
+%           min     0.5 x' H x + g' x
+%            x
+%           s.t. A x + b >= 0      (Lagrange multiplier: mu)
 %                 x >= 0      (Lagrange multiplier: lamba)
 %
 % Syntax: [x,info,mu,lambda,iter] = QP_dualActiveSet(g,A,b,x)
@@ -23,7 +23,7 @@ function [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
 % ---------------- IMPLEMENTATION --------------
 
 % TODO
-
+% Not considerd yet, should be repaired a lot
 
 % Setup tolerances
 tol_L = 1e-8;
