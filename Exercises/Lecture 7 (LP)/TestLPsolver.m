@@ -25,10 +25,10 @@ b = A*x;
 
 [xlp,info,mulp,lambdalp,iter] = LPippd(g,A,b,ones(n,1));
 
-iter=iter
+iter=iter;
 
 if info
-    X = max(abs(xlp-x))
-    M = max(abs(mulp-mu))
-    L = max(abs(lambdalp-lambda))
+    X = max(abs(xlp-x));
+    M = max(abs(mulp-mu));
+    L = max(abs(lambdalp-lambda));
 end
