@@ -1,8 +1,8 @@
 function [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
 % ---------------- DESCRIPTION --------------
 %
-% Name: QP_dualActiveSet   
-% Type: Primal-Dual Active-Set QP Solver
+% Name: QP_InteriorPointPDPC   
+% Type: Primal-Dual Predictor-Corrector Interior-Point QP Solver
 %
 % Problem structure:
 %          min  g'*x

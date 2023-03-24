@@ -47,11 +47,11 @@ ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Col
 saveas(gcf,'./ContourProblem11.png')
 
 %% Generate test random test problem
-n = 200;
+n = 20;
 alpha = 0.1;
 density = 0.15;
 
-[H,g,bl,A,bu,l,u] = RandomQP_box(n,alpha,density);
+[H,g,bl,A,bu,l,u] = RandomQP_ineq_box(n,alpha,density);
 
 x0 = zeros(n,1);
 
@@ -63,5 +63,5 @@ xr = quadprog(H,g,Aq,bq,[],[],l,u);
 %%
 z0 = ones(2*n*2+2*n,1);
 s0 = ones(2*n*2+2*n,1);
-[xi,z,s] = PDPC_InteriorPoint__ineq_box(H,g,bl,A,bu,l,u,x0,z0,s0);
+[xi,z,s] = QP_ineq_box_InteriorPointPDPC(H,g,bl,A,bu,l,u,x0,z0,s0);
 xi
