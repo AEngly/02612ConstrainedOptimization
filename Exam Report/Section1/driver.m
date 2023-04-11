@@ -65,6 +65,7 @@ end
 
 %% Plotting the comparison (with quadprog)
 
+figure,
 hold on
 
     for i=1:7
@@ -81,14 +82,14 @@ saveas(gcf,'./Plots/ComparisonSolvers1.png')
 
 %% Plotting the comparison (without quadprog)
 
+figure,
 hold on
 
-    for i=1:4
+    for i=1:6
         plot(problem_sizes, TTC_avg(i,:));
     end
-    plot(problem_sizes, TTC_avg(6,:));
     
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'NullSpace')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")
 

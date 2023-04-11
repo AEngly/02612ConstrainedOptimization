@@ -58,7 +58,7 @@ x0 = zeros(n,1);
 % find reference solution
 Aq = [full(-A) full(A)]';
 bq = [-bl; bu];
-xr = quadprog(H,g,Aq,bq,[],[],l,u);
+xr = quadprog(H,g,Aq,bq,[],[],l,u,[],options);
 
 %
 z0 = ones(2*n*2+2*n,1);
@@ -80,7 +80,7 @@ TTC = zeros(2,l);
 j = 1;
 
 problem_sizes = 10:step:l*step+10;
-options = optimoptions('quadprog','Display','off','StepTolerance', 1e-8, 'OptimalityTolerance', 1e-8);
+options = optimoptions('quadprog','Display','none','StepTolerance', 1e-8, 'OptimalityTolerance', 1e-8);
 
 for n = problem_sizes
 
@@ -101,7 +101,7 @@ for n = problem_sizes
     s0 = ones(2*n*2+2*n,1);
 
     % Time runs
-    TTC(1,j) = cpuTimer(@quadprog,H,g,Aq,bq,[],[],l,u);
+    TTC(1,j) = cpuTimer(@quadprog,H,g,Aq,bq,[],[],l,u,[],options);
     TTC(2,j) = cpuTimer(@QP_ineq_box_InteriorPointPDPC,H,g,bl,A,bu,l,u,x0,z0,s0);
 
 

@@ -24,6 +24,7 @@ function [H,g,A,b] = GeneratorECQP(n,alpha,beta,density)
     b = rand(m,1);
     M = sprandn(n,n,density);
     H = M*M' + alpha*eye(n,n);
+    % g should be calculated from random x and lambda
     g = randn(n,1);
 
 end
