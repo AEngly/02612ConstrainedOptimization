@@ -1,0 +1,5 @@
+2.1 
+	- Optimal control problem generator
+	- Portfolio optimization problem generator
+	- Huber fitting problem generator
+	- Support vector machine random problem generator
