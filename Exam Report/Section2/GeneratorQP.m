@@ -22,11 +22,13 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density)
 % ---------------- IMPLEMENTATION --------------
 
     m = round(beta*n);
+    % Create empty A and b, as no equality constraints are considered
     b = [];
     A = [];
     C = sprandn(n,m,density);
     dl = -rand(m,1);
     du = rand(m,1);
+    % Create empty upper and lower bounds for x, as x is unconstrained
     l = [];
     u = [];
     M = sprandn(n,n,density);
