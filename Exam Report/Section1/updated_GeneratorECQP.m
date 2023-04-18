@@ -1,4 +1,4 @@
-function [H,g,A,b,x,lambda] = GeneratorECQP(n,alpha,beta,density)
+function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
 
 % ---------------- DESCRIPTION --------------
 %

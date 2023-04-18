@@ -20,7 +20,7 @@ function [x, lambda] = EqualityQPSolverLUdense(H, g, A, b)
 %
 
 % ---------------- IMPLEMENTATION --------------
-
+    A = full(A);
     [LHS, RHS, size_x] = KKT_matrix(H, g, A, b);
     [L, U] = lu(LHS);
     y = L \ RHS; % Forward substitution
