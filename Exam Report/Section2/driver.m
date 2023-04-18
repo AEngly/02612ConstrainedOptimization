@@ -11,7 +11,7 @@
 %                   dl <= C'x <= du
 %                   l <= x <= u
 %
-% Created: 30.03.2023
+% Created: 18.04.2023
 % Authors: Andreas Engly (s170303) and Karl Takeuchi-Storm (s130377)
 %          Compute, Technical University of Denmark
 %
@@ -40,7 +40,7 @@ for n = problem_sizes
     % Display
     fprintf('Problem size: %d\n', n);
 
-    [H,g,A,b] = GeneratorQP(n,alpha,beta,density);
+    [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
     for k = 1:smoother
 

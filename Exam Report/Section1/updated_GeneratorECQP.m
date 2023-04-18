@@ -1,4 +1,4 @@
-function [H,g,A,b] = GeneratorECQP(n,alpha,beta,density)
+function [H,g,A,b,x,lambda] = GeneratorECQP(n,alpha,beta,density)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -27,9 +27,9 @@ function [H,g,A,b] = GeneratorECQP(n,alpha,beta,density)
     x = randn(n,1);
     lambda = randn(m,1);
 
-    y = [H -A; -A' zeros(m,m)]*[x;lambda]
+    y = [H -A; -A' zeros(m,m)]*[x;lambda];
 
     g = -y(1:n);
-    b = -y(n+1:n+m);
+    b = y(n+1:n+m);
 
 end
