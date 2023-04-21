@@ -1,4 +1,3 @@
-
 function [x, lambda] = EqualityQPSolverLUsparse(H, g, A, b)
 
 % ---------------- DESCRIPTION --------------
@@ -22,12 +21,10 @@ function [x, lambda] = EqualityQPSolverLUsparse(H, g, A, b)
 % ---------------- IMPLEMENTATION --------------
 
     [LHS, RHS, size_x] = KKT_matrix(H, g, A, b);
-    LHS = sparse(LHS);
-    RHS = sparse(RHS);
-    [L, U] = lu(LHS);
-    y = L \ RHS; % Forward substitution
-    x_lambda = U \ y;   % Backward substitution
+    LHS = sparse(LHS); % Changing the KKT-matrix to sparse representation
+    [L, U, p] = lu(LHS,'vector');
+    z = L \ RHS(p); % Forward substitution
+    x_lambda = U \ z;   % Backward substitution
     x = x_lambda(1:size_x);
     lambda = x_lambda(size_x+1:end);
-
 end

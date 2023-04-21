@@ -19,19 +19,16 @@
 alpha = 0.15;
 density = 0.15; % 15% must be non-zero
 
-n = 50;
-step = 2;
+n = 300;
+step = 10;
 
 problem_sizes = 10:step:n;
 
 l = size(problem_sizes,2);
 
+%% gather data beta 0.5
 
-%%
-
-%% gather data
-
-beta = 0.95;
+beta = 0.5;
 
 residual = zeros(l,2);
 j = 1;
@@ -55,7 +52,7 @@ end
 
 
 
-%% plot
+%% plot numerical performance
 figure,
 hold on
 
@@ -68,19 +65,20 @@ scatter(problem_sizes,residual(:,6), 's');
 
 set(gca,'yscale','log')
 legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-%legend('LUdense','LDLdense')
+%legend('NullSpace', 'RangeSpace')
 xlabel("n")
 ylabel("residual")
 title("beta 0.5")
 
 hold off
 
+saveas(gcf,'./Plots/Numerical_performance_Solvers_beta_0_5.png')
 
 %% Benchmarking solvers
 alpha = 0.15;
 density = 0.15; % 15% must be non-zero
 
-n = 500;
+n = 300;
 step = 10;
 
 smoother = 10;
@@ -92,15 +90,16 @@ l = size(problem_sizes,2);
 
 beta = 0.05;
 
-[TTC_avg] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
+[TTC_avg1] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
 
 figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg(i,:));
+        plot(problem_sizes, TTC_avg1(i,:));
     end
     
+    set(gca,'yscale','log')
     legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")
@@ -115,15 +114,16 @@ saveas(gcf,'./Plots/ComparisonSolvers_beta_0_05.png')
 
 beta = 0.2;
 
-[TTC_avg] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
+[TTC_avg2] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
 
 figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg(i,:));
+        plot(problem_sizes, TTC_avg2(i,:));
     end
     
+    set(gca,'yscale','log')
     legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")
@@ -136,15 +136,16 @@ saveas(gcf,'./Plots/ComparisonSolvers_beta_0_2.png')
 
 beta = 0.5;
 
-[TTC_avg] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
+[TTC_avg3] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
 
 figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg(i,:));
+        plot(problem_sizes, TTC_avg4(i,:));
     end
     
+    set(gca,'yscale','log')
     legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")
@@ -157,15 +158,16 @@ saveas(gcf,'./Plots/ComparisonSolvers_beta_0_5.png')
 
 beta = 0.8;
 
-[TTC_avg] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
+[TTC_avg5] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
 
 figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg(i,:));
+        plot(problem_sizes, TTC_avg5(i,:));
     end
     
+    set(gca,'yscale','log')
     legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")
@@ -186,6 +188,7 @@ hold on
         plot(problem_sizes, TTC_avg(i,:));
     end
     
+    set(gca,'yscale','log')
     legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
     xlabel("n")
     ylabel("CPU time")

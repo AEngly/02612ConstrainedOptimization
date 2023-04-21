@@ -1,4 +1,3 @@
-
 function [x, lambda] = EqualityQPSolverLUdense(H, g, A, b)
 
 % ---------------- DESCRIPTION --------------
@@ -20,11 +19,11 @@ function [x, lambda] = EqualityQPSolverLUdense(H, g, A, b)
 %
 
 % ---------------- IMPLEMENTATION --------------
-    A = full(A);
+
     [LHS, RHS, size_x] = KKT_matrix(H, g, A, b);
-    [L, U] = lu(LHS);
-    y = L \ RHS; % Forward substitution
-    x_lambda = U \ y;   % Backward substitution
+    [L, U, p] = lu(LHS,'vector');
+    z = L \ RHS(p); % Forward substitution
+    x_lambda = U \ z;   % Backward substitution
     x = x_lambda(1:size_x);
     lambda = x_lambda(size_x+1:end);
 

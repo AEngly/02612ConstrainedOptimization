@@ -21,6 +21,7 @@ function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
 
     m = round(beta*n);
     A = sprandn(n,m,density);
+    A = full(A);
     M = sprandn(n,n,density);
     H = M*M' + alpha*eye(n,n);
 
