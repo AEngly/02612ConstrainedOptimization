@@ -7,7 +7,7 @@ function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
 %
 % Problem structure:
 %           min     0.5 x' H x + g' x
-%            x
+%            x input \
 %           s.t.    A'x + b = 0
 %
 % Syntax: [x, lambda] = EqualityQPSolverRS(H, g, A, b)

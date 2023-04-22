@@ -19,7 +19,7 @@
 alpha = 0.15;
 density = 0.15; % 15% must be non-zero
 
-n = 300;
+n = 500;
 step = 10;
 
 problem_sizes = 10:step:n;
@@ -30,7 +30,7 @@ l = size(problem_sizes,2);
 
 beta = 0.5;
 
-residual = zeros(l,2);
+residual = zeros(l,6);
 j = 1;
 
 for i = problem_sizes
@@ -64,25 +64,82 @@ scatter(problem_sizes,residual(:,5), '*');
 scatter(problem_sizes,residual(:,6), 's');
 
 set(gca,'yscale','log')
-legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
+legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','southeast')
 %legend('NullSpace', 'RangeSpace')
 xlabel("n")
 ylabel("residual")
-title("beta 0.5")
+title("\beta = 0.5")
 
 hold off
 
 saveas(gcf,'./Plots/Numerical_performance_Solvers_beta_0_5.png')
 
+%%
+
+alpha = 0.15;
+density = 0.15; % 15% must be non-zero
+
+n = 50;
+step = 1;
+
+problem_sizes = 10:step:n;
+betas = 0.05:0.05:0.95;
+
+l = size(problem_sizes,2);
+m = size(betas, 2);
+
+residuals = zeros(m,l,6);
+
+k = 1;
+
+for beta = betas
+    j = 1;
+    for i = problem_sizes
+        [H,g,A,b,x,lambda] = updated_GeneratorECQP(i,alpha,beta,density);
+    [xstar] = EqualityQPSolverLUdense(H, g, A, b);
+    residuals(k,j,1) = norm(x-xstar);
+    [xstar] = EqualityQPSolverLUsparse(H, g, A, b);
+    residuals(k,j,2) = norm(x-xstar);
+    [xstar] = EqualityQPSolverLDLdense(H, g, A, b);
+    residuals(k,j,3) = norm(x-xstar);
+    [xstar] = EqualityQPSolverLDLsparse(H, g, A, b);
+    residuals(k,j,4) = norm(x-xstar);
+    [xstar] = EqualityQPSolverRS(H, g, A, b);
+    residuals(k,j,5) = norm(x-xstar);
+    [xstar] = EqualityQPSolverNS(H, g, A, b);
+    residuals(k,j,6) = norm(x-xstar);
+        j = j + 1;
+    end
+    disp(k)
+    k = k + 1;
+end
+
+%% Plot results
+titles = {'LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','southeast'};
+
+limits = [1e-15,1e-12];
+figure,
+for i=1:6
+    subplot(6,1,i)
+    pcolor(problem_sizes,betas,residuals(:,:,i))
+    axis ij
+    xlabel("n")
+    ylabel("betas")
+    colorbar
+    set(gca,'clim',limits([1,end]))
+    title(titles(i))
+end
+
+
 %% Benchmarking solvers
 alpha = 0.15;
 density = 0.15; % 15% must be non-zero
 
-n = 300;
+n = 500;
 step = 10;
 
 smoother = 10;
-problem_sizes = 10:step:n;
+problem_sizes = 50:step:n;
 
 l = size(problem_sizes,2);
 
@@ -99,18 +156,19 @@ hold on
         plot(problem_sizes, TTC_avg1(i,:));
     end
     
-    set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-    xlabel("n")
-    ylabel("CPU time")
-    title("beta 0.05")
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.05")
+
 
 hold off
 
 saveas(gcf,'./Plots/ComparisonSolvers_beta_0_05.png')
 
 
-%% beta 0.2
+% beta 0.2
 
 beta = 0.2;
 
@@ -123,16 +181,17 @@ hold on
         plot(problem_sizes, TTC_avg2(i,:));
     end
     
-    set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-    xlabel("n")
-    ylabel("CPU time")
-    title("beta 0.2")
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.20")
+
 
 hold off
 
 saveas(gcf,'./Plots/ComparisonSolvers_beta_0_2.png')
-%% beta 0.5
+% beta 0.5
 
 beta = 0.5;
 
@@ -142,21 +201,44 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg4(i,:));
+        plot(problem_sizes, TTC_avg3(i,:));
     end
     
-    set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-    xlabel("n")
-    ylabel("CPU time")
-    title("beta 0.5")
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.50")
+
 
 hold off
 
 saveas(gcf,'./Plots/ComparisonSolvers_beta_0_5.png')
-%% beta 0.8
+% beta 0.8
 
 beta = 0.8;
+
+[TTC_avg4] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
+
+figure,
+hold on
+
+    for i=1:6
+        plot(problem_sizes, TTC_avg4(i,:));
+    end
+    
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.80")
+
+
+hold off
+
+saveas(gcf,'./Plots/ComparisonSolvers_beta_0_8.png')
+% beta 0.95
+beta = 0.95;
 
 [TTC_avg5] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
 
@@ -167,32 +249,11 @@ hold on
         plot(problem_sizes, TTC_avg5(i,:));
     end
     
-    set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-    xlabel("n")
-    ylabel("CPU time")
-    title("beta 0.8")
-
-hold off
-
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_8.png')
-%% beta 0.95
-beta = 0.95;
-
-[TTC_avg] = dataGatheringLoop(beta, problem_sizes, smoother, l, alpha, density);
-
-figure,
-hold on
-
-    for i=1:6
-        plot(problem_sizes, TTC_avg(i,:));
-    end
-    
-    set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace')
-    xlabel("n")
-    ylabel("CPU time")
-    title("beta 0.95")
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.95")
 
 hold off
 
