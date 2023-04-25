@@ -1,11 +1,5 @@
-1.3
-	- Check sign correct for b
 
-1.4
-	- Random generator should generate random x and lambda, not g and b
-
-1.5
-	- Generate plots for different beta values. It is only nescessary to consider problems up to n=300
-	- Diver file should state n as the actual problem size
 1.6
 	- missing
+	- Suggest to test very sparse problems
+	- suggest to test very dense problems

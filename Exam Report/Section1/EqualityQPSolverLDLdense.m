@@ -19,7 +19,7 @@ function [x, lambda] = EqualityQPSolverLDLdense(H, g, A, b)
 %
 
 % ---------------- IMPLEMENTATION --------------
-    A = full(A);
+
     [LHS, RHS, size_x] = KKT_matrix(H, g, A, b);
     [L,D,p] = ldl(LHS, 'lower','vector');
     z = L \ RHS(p); % Forward substitution
