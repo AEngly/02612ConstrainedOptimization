@@ -1,16 +1,17 @@
-function [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
+function [x,y,z,s,info,iter] = QP_general_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u)
 % ---------------- DESCRIPTION --------------
 %
-% Name: QP_InteriorPointPDPC   
+% Name: QP_ineq_box_InteriorPointPDPC   
 % Type: Primal-Dual Predictor-Corrector Interior-Point QP Solver
 %
 % Problem structure:
 %           min     0.5 x' H x + g' x
 %            x
-%           s.t. A x + b >= 0      (Lagrange multiplier: mu)
-%                 x >= 0      (Lagrange multiplier: lamba)
+%           s.t.    A'*x + b = 0
+%                   bl <= C' x <= bu
+%                   l <=    x <= u
 %
-% Syntax: [x,info,mu,lambda,iter] = QP_dualActiveSet(g,A,b,x)
+% Syntax: [x, y, info, z, s, iter] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
 %
 %         info = true   : Converged
 %              = false  : Not Converged
@@ -22,55 +23,66 @@ function [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
 
 % ---------------- IMPLEMENTATION --------------
 
-% TODO
-% Not considerd yet, should be repaired a lot
+itermax = 20;
 
 % Setup tolerances
 tol_L = 1e-8;
 tol_C = 1e-8;
 tol_mu = 1e-8;
 
-% Implement starting point heuristic
+%Find starting point
+[x,y,z,s] = QP_general_InteriorPointPDPC_initial_point(H,g,A,b,C,dl,du,l,u);
+
+%Check problem size
+n = length(x);
+m = length(b);
+
+% Permute matrices
+Cbar = [full(C) full(-C) eye(length(l),length(l)) -eye(length(l),length(l))]; 
+dbar = [-dl; du; -l; u];
 
 % Calculate residuals
-rL = H*x0+g-A*y0-C*z0;
-rA = b-A'*x0;
-rC = s0+d-C'*x0;
-rsz = (s0.*z0)';
+rL = H*x+g-A*y-Cbar*z;
+rA = -b-A'*x;
+rC = s-dbar-Cbar'*x;
+rsz = (s.*z);
 
 % Setup constants
-mc = length(d);
-mu = z0'*s0/mc;
+mc = length(dbar);
 
-x = x0;
-s = y0;
-z = z0;
-s = s0;
-deltaxyaff = zeros(length(g)+length(b),1);
+% Complementarity measure
+mu = z'*s/mc;
 
 % Setup loop
-terminate = (k >20 | norm(rL)<=tol_L | norm(rC)<=tol_C | abs(mu)<=tol_mu );
 k=0;
+terminate = (k > itermax | norm(rL)<=tol_L | norm(rC)<=tol_C | abs(mu)<=tol_mu );
+
+% preallocation
+%deltaxyaff = zeros(n+m,1);
 
 while ~terminate
-    Czs = C*diag(z./s);
-    Hbar = H + Czs*C';
-    O = zeros(length(b),length(b));
-    [L,D,p] = ldl([Hbar -A; -A' O],'lower','vector');
+    k= k+1;
+    disp(k);
+    % Compute LDL factorization of modified KKT system
+    Czs = Cbar*diag(z./s);
+    Hbar = H + Czs*Cbar';
+    % Book mentions modified Cholesky here??
+    KKT = [ Hbar -A; -A' zeros(m,m)];
+    [L,D,p] = ldl(KKT,'lower','vector');
 
     %Affine direction
     rbarL = rL - Czs * (rC-s);
-    rtemp = [ -rbarL;-rA];
+    rtemp = [-rbarL; -rA];
     deltaxyaff(p) = L'\( D \(L\rtemp(p)));
-    deltaxaff = deltaxyaff(1:n);
-    deltayaff = deltaxyaff(n+1:end);
-    deltazaff = -(z./s)*C'*deltaxaff + (z./s)*(rC-s');
-    deltasaff = -s' -( s./z)*deltazaff;
+    deltaxaff = deltaxyaff(1:n)';
+    %deltayaff = deltaxyaff(n+1:end)';
+    deltazaff = -diag(z./s)*Cbar'*deltaxaff + diag(z./s)*(rC-s);
+    deltasaff = -s -diag( s./z)*deltazaff;
 
     %compute alpha affine
     idxdeltazaff = find(deltazaff < 0.0);
     idxdeltasaff = find(deltasaff < 0.0);
-    alphaaff = min([1.0 -z(idxdeltazaff)/deltazaff(idxdeltazaff) -s(idxdeltasaff)/deltasaff(idxdeltasaff)]);
+    alphaaff = min([1.0 (-z(idxdeltazaff)./deltazaff(idxdeltazaff))' (-s(idxdeltasaff)./deltasaff(idxdeltasaff))']);
 
     % Duality gap and centering parameter
     muaff = (z+alphaaff*deltazaff)'*(s+ alphaaff*deltasaff)/mc;
@@ -78,19 +90,19 @@ while ~terminate
 
     % Affine-Centering-Correction Direction 
     rbarsz = rsz + deltasaff.*deltazaff-sigma*mu;
-    rbarL = rL - Czs * (rC-inv(diag(z))*rbarsz);
-    rtemp = [ -rbarL;-rA];
+    rbarL = rL - Czs * (rC-diag(z)\rbarsz);
+    rtemp =  [-rbarL; -rA];
 
-    deltaxy(p) = L'\( D \(L\rtemp(p)));
-    deltax = deltaxy(1:n);
-    deltay = deltaxy(n+1:end);
-    deltaz = -(z./s)*C'*deltax + (z./s)*(rC-diag(z)\rbarsz);
-    deltas = -diag(z)\rbarsz-( s./z )*deltaz;
+    deltaxy(p) = L'\( D \(L\rtemp(p))); 
+    deltax = deltaxy(1:n)';
+    deltay = deltaxy(n+1:end)';
+    deltaz = -diag(z./s)*Cbar'*deltax + diag(z./s)*(rC-diag(z)\rbarsz);
+    deltas = -diag(z)\rbarsz-diag( s./z )*deltaz;
 
     %compute alpha 
     idxdeltaz = find(deltaz < 0.0);
     idxdeltas = find(deltas < 0.0);
-    alpha = min([1.0 -z(idxdeltaz)/deltaz(idxdeltaz) -s(idxdeltas)/deltas(idxdeltas)]);
+    alpha = min([1.0 (-z(idxdeltaz)./deltaz(idxdeltaz))' (-s(idxdeltas)./deltas(idxdeltas))']);
 
     %Update iteration
     nabla = 0.995;
@@ -101,10 +113,15 @@ while ~terminate
     s = s + alphabar*deltas;
     
     %calculate residuals
-    rL = H*x+g-A*y-C*z;
-    rA = b-A'*x;
-    rC = s+d-C'*x;
-    rsz = (s.*z)';
+    rL = H*x+g-A*y-Cbar*z;
+    rA = -b-A'*x;
+    rC = s-dbar-Cbar'*x;
+    rsz = (s.*z);
     mu = z'*s/mc;
+
+    % Check convergence
+    terminate = (k > itermax | norm(rL) <= tol_L | norm(rC) <= tol_C | abs(mu) <= tol_mu );
 end
+iter = k;
+info = k <= itermax;
 end

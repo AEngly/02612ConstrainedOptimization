@@ -17,15 +17,26 @@
 %
 % ---------------- IMPLEMENTATION --------------
 
+
+%% Test problems
 %RandomQP settings from OSQP paper
 alpha = 0.01;
 beta = 10; % setting from OSQP paper
 density = 0.15; % 15% must be non-zero
+n = 10;
 
-%% Initial test for InteriorPoint
+
+%% 2.5 test Primal-active set
 
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
+[all_xk, mu_star, active_constraints] = QP_primalActiveSet(H,g,A,b,C,dl,du,l,u);
+%% 2.7 test for InteriorPoint
+
+
+[x,y,z,s] = QP_general_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',b,l,u);
 %%
 % Options for quadprog
 options =  optimoptions('quadprog','Display','off');
