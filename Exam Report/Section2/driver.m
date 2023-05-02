@@ -22,6 +22,11 @@ alpha = 0.01;
 beta = 10; % setting from OSQP paper
 density = 0.15; % 15% must be non-zero
 
+%% Initial test for InteriorPoint
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
+
+%%
 % Options for quadprog
 options =  optimoptions('quadprog','Display','off');
 

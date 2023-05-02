@@ -21,7 +21,7 @@ function [x, lambda] = EqualityQPSolverLDLsparse(H, g, A, b)
 % ---------------- IMPLEMENTATION --------------
 
     [LHS, RHS, size_x] = KKT_matrix(H, g, A, b);
-    LHS = sparse(LHS);
+    LHS = sparse(LHS);  % Changing the KKT-matrix to sparse representation
     [L,D,p] = ldl(LHS, 'lower','vector');
     z = L \ RHS(p); % Forward substitution
     y = D \ z; % Forward substitution
