@@ -1,4 +1,4 @@
-function [c,ceq] = confunHimmelblau(x, p)
+function [c,ceq] = confunHimmelblau(x)
 
     c = zeros(2,1);
     ceq = zeros(0,1);

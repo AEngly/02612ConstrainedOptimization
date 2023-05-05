@@ -1,3 +1,18 @@
+%{
+
+Authors: Karl Takeuchi and Andreas Engly
+
+DESCRIPTION
+This file contains the code for plots, comparisons and solutions in
+general to section 4 of the exam report. All necessary solvers are placed
+in OptimizationSoftware in the main directory 'Exam Report'.
+
+INFORMATION
+To run this file, please comply with the following:
+
+1. You path must be <'Exam Report/Section4'>
+
+%}
 %% Plotting Himmelblau
 
 % SETTINGS FOR LABELS, AXIS' AND FILL
@@ -87,12 +102,27 @@ ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Col
 
 saveas(gcf,'./Plots/ContourHB.png')
 
-%% Solution to Himmelblau (fmincon)
+%% Solution to Himmelblau (fmincon vs IPOPT)
 
 % Starting point
-x0 = [-3.2; 0];
+x0 = [-5; 0];
 
-% Specify starting condition
+% Specification of constraints
+c1_l = 0;
+c1_u = 47;
+
+c2_l = 0;
+c2_u = 70;
+
+x1_l = -5;
+x1_u = 5;
+
+x2_l = -5;
+x2_u = 5;
+
+% SOLUTION: fmincon
+
+% Structure of constraints
 A = [-4 10; 4 -10];
 b = [c2_u; -c2_l];
 Aeq = [];
@@ -100,50 +130,139 @@ beq = [];
 lb = [x1_l; x2_l];
 ub = [x1_u; x2_u];
 
-% Specify constraints
-l = [-5 5];
-u = [5 5];
-cl = [0;0];
-cu = [47;70];
-
 % Solve with fmincon
-optimoptions('fmincon','Display', 'iter', 'SpecifyObjectiveGradient', true, 'TolFun', 1e-3);
-xfmin = fmincon(@objfminconHimmelblau, x0, A, b, Aeq, beq, lb, ub, @confunHimmelblau);
-disp(xfmin)
+optimoptions('fmincon','Display', 'iter', 'SpecifyObjectiveGradient', true, 'TolFun', 1e-8, 'Algorithm', 'interior-point');
+[x_fmincon,fval,exitflag,output_fmincon,lambda,grad,hessian] = fmincon(@objfminconHimmelblau, x0, A, b, Aeq, beq, lb, ub, @confunHimmelblau);
 
-%% 
+% SOLUTION: CasADi with IPOPT
 
-x = -10:0.05:10;
-y = -10:0.05:10;
-[X,Y] = meshgrid(x,y);
+% Uncomment on MacOS with M1 processor
+addpath('./../OptimizationSoftware/casadi-3.6.2-osx64-matlab2018b');
 
-F = (X - 1).^2 + (Y - 2.5).^2;
+% OBS: The solver might be blocked by your operating system. Go to security
+% settings to fix this.
 
-v = -20:2:20;
-[c,h]=contour(X,Y,F,v,"linewidth",2);
-colorbar
+% Import Casadi
+import casadi.*
 
-yc1 = (x + 2)./2; % larger than equal ... x >= 2y - 2
-yc2 = (x - 6)./(-2); % y less ...
-yc3 = (x - 2)./2; % y greater ...
-xc4 = 0; % x larger than 0
-yc5 = 0; % y larger than 0
+x = MX.sym('x', 2);
 
-hold on
-    fill([x(1),repelem(xc4, 401), x(1)],[y(1), y, y(end)],[0.7 0.7 0.7],"facealpha",0.7)
-    fill([x(1), x, x(end)],[y(1), repelem(yc5, 401), y(1)],[0.7 0.7 0.7],"facealpha",0.7)
-    fill([x, x(end), x(1)], [yc1, y(end), x(end)],[0.7 0.7 0.7],"facealpha",0.7)
-    fill([x, x(end), x(1)], [yc2, y(end), x(end)],[0.7 0.7 0.7],"facealpha",0.7)
-    fill([x, x(end), x(1)], [yc3, y(1), y(1)],[0.7 0.7 0.7],"facealpha",0.7)
-    %plot(2.5,4.5,'r.', 'MarkerSize',20)
-hold off
+% Define objective function
+t1 = x(1)*x(1)+x(2)-11;
+t2 = x(1)+x(2)*x(2)-7;
+f = t1*t1 + t2*t2;
 
-%legend('','','','','','','Minimizer')
+% Constraints
+c1 = (x(1)+2)^2 - x(2);
+c2 = -4*x(1) + 10*x(2);
+g = [c1; c2];
 
-xlim([-10 10])
-ylim([-10 10])
-%title('Contour Plot of Linear Program', 'FontSize',20)
-xlabel('$x_{1}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
-ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+nlp = struct;
+nlp.x = x;
+nlp.f = f;
+nlp.g = g;
 
-saveas(gcf,'./Plots/ContourHB.png')
+% Specify options
+opts = struct("ipopt", struct('max_iter', 100, 'print_level', 5));
+
+% Create solver instance
+S = nlpsol('S', 'ipopt', nlp, opts);
+
+sol_ipopt = S('x0',x0,'ubg',[c1_u; c2_u], ...
+    'lbg',[c1_l; c2_l],'lbx',[x1_l;x2_l],'ubx',[x1_u;x2_u]);
+
+disp('----------- RESULTS FOR HIMMELBLAU WITH FMINCON AND IPOPT THROUGH CASADI -----------')
+fprintf('\n----- FMINCON ------\n')
+disp(x_fmincon);
+fprintf('Iterations: %d\n\n', output_fmincon.iterations);
+fprintf('\n----- IPOPT ------\n')
+disp(sol_ipopt.x);
+
+%% Solution to Portfolio (fmincon vs IPOPT)
+
+n_max = 300;
+k_max = 100;
+step_size_n = 20;
+step_size_k = 10;
+
+n_steps = n_max/step_size_n;
+k_steps = k_max/step_size_k;
+
+N = step_size_n:step_size_n:n_max;
+K = step_size_k:step_size_k:k_max;
+
+iterations = zeros(n_steps, k_steps);
+functionCalls = zeros(n_steps, k_steps);
+timeRecordings = zeros(n_steps, k_steps);
+
+% Construct a grid and run solver
+for i = 1:n_steps
+    for j = 1:k_steps
+
+        % Set assets and factors
+        n = N(i);
+        k = K(j);
+
+        % Diplay iteration to check how far we are
+        fprintf("(%d, %d)\n", n, k);
+
+        % Define risk-aversion
+        gamma = 1;
+        
+        % Generate problem
+        D = diag(rand(1,n))*sqrt(k);
+        F = sprand(n,k,0.5);
+        mu = 0 + 1.*randn(n,1);
+        
+        % Define anonymous function
+        objfun = @(x)objPortfolio(x,mu,D,gamma,n,k);
+        
+        % Find feasible solution as starting point
+        x0 = zeros(n+k,1);
+        aux_x0 = rand(n,1);
+        x0(1:n) = aux_x0/sum(aux_x0);
+        x0(n+1:n+k) = transpose(F)*x0(1:n);
+        
+        % Specification of constraints
+        x_l = 0;
+        x_u = 0.5;
+        A = [[transpose(F) -eye(k)]; [repelem(1,n) repelem(0,k)]];
+        b = [zeros(k,1); 1];
+        Aeq = [];
+        beq = [];
+        lb = [repelem(x_l,n) repelem(-inf,k)];
+        ub = [repelem(x_u,n) repelem(inf,k)];
+        
+        % Solve with fmincon
+        options = optimoptions('fmincon','Display', 'off', 'SpecifyObjectiveGradient', false, 'MaxFunctionEvaluations', 1e+6, 'TolFun', 1e-6, 'Algorithm', 'interior-point');
+        startTime = cputime;
+        [x_fmincon,fval,exitflag,output_fmincon,lambda,grad,hessian] = fmincon(objfun, x0, A, b, Aeq, beq, lb, ub, [], options);
+        totalTime = cputime - startTime;
+
+        % Save results
+        iterations(i,j) = output_fmincon.iterations;
+        functionCalls(i,j) = output_fmincon.funcCount;
+        timeRecordings(i,j) = totalTime;
+    
+    end
+end
+
+heatmap(K, N, iterations)
+xlabel('Factors (k)') 
+ylabel('Assets (n)')
+saveas(gcf,'./Plots/PortfolioHeatmapIterations.png')
+
+heatmap(K, N, functionCalls)
+xlabel('Factors (k)') 
+ylabel('Assets (n)')
+saveas(gcf,'./Plots/PortfolioHeatmapFunctionCalls.png')
+
+heatmap(K, N, timeRecordings)
+xlabel('Factors (k)') 
+ylabel('Assets (n)')
+saveas(gcf,'./Plots/PortfolioHeatmapTimer.png')
+
+%% Solution to Recycle Problem
+
+
+

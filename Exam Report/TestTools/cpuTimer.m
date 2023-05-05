@@ -1,7 +1,11 @@
-function time = cpuTimer(f, varargin)
+function [time, output] = cpuTimer(f, varargin)
 
     start = cputime;
-    output = f(varargin{:});
+    results = f(varargin{:});
     time = cputime - start;
+
+    if argout > 1
+        output = results;
+    end
 
 end
