@@ -264,5 +264,101 @@ saveas(gcf,'./Plots/PortfolioHeatmapTimer.png')
 
 %% Solution to Recycle Problem
 
+n_max = 1000;
+step_size = 5;
+n_min = step_size;
+n_steps = n_max/step_size;
+
+N = step_size:step_size:n_max;
+
+iterations = zeros(n_steps, 1);
+functionCalls = zeros(n_steps, 1);
+timeRecordings = zeros(n_steps, 1);
+
+% Construct a grid and run solver
+for i = 1:n_steps
+
+        % Set assets and factors
+        n = N(i);
+
+        % Diplay iteration to check how far we are
+        fprintf("n = %d\n", n);
+
+        % Define risk-aversion
+        u_bar = 0.2;
+        d0 = 1;
+
+        % Define anonymous function
+        objfun = @(u) transpose(u - u_bar) * (u - u_bar);
+        
+        % Specification of constraints
+        x_l = [];
+        x_u = [];
+        A = [];
+        b = [];
+        lb = [];
+        ub = [];
+
+        % Construct Aeq
+        Aeq = zeros(n,n+1);
+        Aeq(1,1) = -1;
+        Aeq(1,n) = 1;
+        for j = 1:(n-2)
+            k = j+1;
+            Aeq(k,k-1) = 1;
+            Aeq(k,k) = -1;
+        end
+        Aeq(n, n-1) = 1;
+        Aeq(n, n) = -1;
+        Aeq(n, n+1) = -1;
+
+        % Construct beq
+        beq = zeros(n,1);
+        beq(1) = -d0;
+
+        % Construct feasible starting point
+        u0 = zeros(n+1,1);
+        kappa = 0;
+        u0(1:n-1) = kappa;
+        u0(n) = -d0 + kappa;
+        u0(n+1) = d0;
+
+        % Solve with fmincon
+        options = optimoptions('fmincon','Display', 'off', 'SpecifyObjectiveGradient', false, 'MaxFunctionEvaluations', 1e+6, 'TolFun', 1e-6, 'Algorithm', 'interior-point');
+        startTime = cputime;
+        [x_fmincon,fval,exitflag,output_fmincon,lambda,grad,hessian] = fmincon(objfun, u0, A, b, Aeq, beq, lb, ub, [], options);
+        totalTime = cputime - startTime;
+
+        if exitflag == 0
+            fprintf("Not optimal for n = %d", n);
+        end
+
+        % Save results
+        iterations(i) = output_fmincon.iterations;
+        functionCalls(i) = output_fmincon.funcCount;
+        timeRecordings(i) = totalTime;
+    
+end
+
+plot(N, timeRecordings)
+
+xlabel('$n$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('CPU time','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+
+saveas(gcf,'./Plots/RecycleProblemCPUTime.png')
+
+plot(N, iterations)
+
+xlabel('$n$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('Iterations','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+
+saveas(gcf,'./Plots/RecycleProblemIterations.png')
+
+plot(N, functionCalls)
+
+xlabel('$n$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('Function calls','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+
+saveas(gcf,'./Plots/RecycleProblemFunctionCalls.png')
 
 
