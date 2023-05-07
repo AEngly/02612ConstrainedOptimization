@@ -1,4 +1,4 @@
-function [x,y,z,s,info,iter] = QP_general_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u)
+function [x,y,z,s,info,iter] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,itermax)
 % ---------------- DESCRIPTION --------------
 %
 % Name: QP_ineq_box_InteriorPointPDPC   
@@ -23,28 +23,64 @@ function [x,y,z,s,info,iter] = QP_general_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u)
 
 % ---------------- IMPLEMENTATION --------------
 
-itermax = 20;
-
 % Setup tolerances
 tol_L = 1e-8;
 tol_C = 1e-8;
+tol_A = 1e-8;
 tol_mu = 1e-8;
 
-%Find starting point
-[x,y,z,s] = QP_general_InteriorPointPDPC_initial_point(H,g,A,b,C,dl,du,l,u);
+% ---------------- Find starting point --------------
 
 %Check problem size
-n = length(x);
+n = length(g);
 m = length(b);
+% Set initial guesses for X0, y0, s0 and z0
+
+x0 = zeros(n,1);
+y0 = zeros(m,1);
 
 % Permute matrices
-Cbar = [full(C) full(-C) eye(length(l),length(l)) -eye(length(l),length(l))]; 
-dbar = [-dl; du; -l; u];
+Cbar = [full(C) full(-C) eye(length(l)) -eye(length(u))]; 
+dbar = [dl; -du; l; -u];
+
+s0 = ones(length(dbar),1);
+z0 = ones(length(dbar),1);
+
+% Calculate residuals
+rL = H*x0+g-A*y0-Cbar*z0;
+rA = -b-A'*x0;
+rC = s0+dbar-Cbar'*x0;
+rsz = (s0.*z0);
+
+%Compute LDL factorization of modified KKT system
+Czs = Cbar*diag(z0./s0);
+Hbar = H + Czs*Cbar';
+KKT = [ Hbar -A; -A' zeros(m,m)];
+[L,D,p] = ldl(KKT,'lower','vector');
+
+%Affine direction
+rbarL = rL - Czs * (rC-s0);
+rtemp = [-rbarL; -rA];
+deltaxyaff(p) = L'\( D \(L\rtemp(p)));
+deltaxaff = deltaxyaff(1:n)';
+deltazaff = -diag(z0./s0)*Cbar'*deltaxaff + diag(z0./s0)*(rC-s0);
+deltasaff = -s0 -diag( s0./z0)*deltazaff;
+
+% Compute initial point
+x = x0;
+y = y0;
+z = max(ones(length(z0),1),abs(z0+deltazaff));
+s = max(ones(length(s0),1),abs(s0+deltasaff));
+
+
+% ---------------- iterate --------------
+
+
 
 % Calculate residuals
 rL = H*x+g-A*y-Cbar*z;
 rA = -b-A'*x;
-rC = s-dbar-Cbar'*x;
+rC = s+dbar-Cbar'*x;
 rsz = (s.*z);
 
 % Setup constants
@@ -55,7 +91,7 @@ mu = z'*s/mc;
 
 % Setup loop
 k=0;
-terminate = (k > itermax | norm(rL)<=tol_L | norm(rC)<=tol_C | abs(mu)<=tol_mu );
+terminate = (k > itermax | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
 
 % preallocation
 %deltaxyaff = zeros(n+m,1);
@@ -115,12 +151,12 @@ while ~terminate
     %calculate residuals
     rL = H*x+g-A*y-Cbar*z;
     rA = -b-A'*x;
-    rC = s-dbar-Cbar'*x;
+    rC = s+dbar-Cbar'*x;
     rsz = (s.*z);
     mu = z'*s/mc;
 
     % Check convergence
-    terminate = (k > itermax | norm(rL) <= tol_L | norm(rC) <= tol_C | abs(mu) <= tol_mu );
+    terminate = (k >= itermax | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
 end
 iter = k;
 info = k <= itermax;

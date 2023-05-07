@@ -23,20 +23,54 @@
 alpha = 0.01;
 beta = 10; % setting from OSQP paper
 density = 0.15; % 15% must be non-zero
-n = 10;
+n = 100;
 
 
 %% 2.5 test Primal-active set
-
+maxiter=10000;
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
-[all_xk, mu_star, active_constraints] = QP_primalActiveSet(H,g,A,b,C,dl,du,l,u);
+[all_xk] = test(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+x = all_xk(:,end);
+norm(x-xstarx)
+
+%% test huber fitting
+n=2;
+beta = 1;
+maxiter=1000;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
+
+[all_xk]  = test(H, g, A, b, C, dl, du, l, u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+x = all_xk(:,end);
+norm(x-xstarx)
 %% 2.7 test for InteriorPoint
+maxiter=30;
+[H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
+[x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
 
-[x,y,z,s] = QP_general_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u);
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
-xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',b,l,u);
+norm(x-xstarx)
+
+%% test huber fitting
+n=5;
+beta = 10;
+maxiter=100;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
+[x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
 %%
 % Options for quadprog
 options =  optimoptions('quadprog','Display','off');

@@ -1,5 +1,5 @@
 
-function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(H, g, A, b, C, dl, du, l, u)
+function [all_xk] = QP_primalActiveSet_initial_point(H, g, A, b, C, dl, du, l, u)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -10,7 +10,7 @@ function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(H, g, A, b, 
 %           min     0.5 x' H x + g' x
 %            x
 %           s.t.    A'*x + b = 0
-%                   bl <= C' x <= bu    (Lagrange multiplier: mu)
+%                   dl <= C' x <= du    (Lagrange multiplier: mu)
 %                   l <=    x <= u      (Lagrange multiplier: lamba)  
 %
 % Syntax: [x,info,mu,lambda,iter] = QP_dualActiveSet(g,A,b,x)
@@ -24,6 +24,13 @@ function [all_xk, mu_star, active_constraints] = QP_primalActiveSet(H, g, A, b, 
 %
 % ---------------- IMPLEMENTATION --------------
 
+% ---------------- Initial point --------------
+
+% Add slack variable to convert to equality constrained problem
+n = length(g);
+
+x = linprog(g,[C'; -C'],[du; -dl],A',b,l,u);
+
 % We start by defining the KKT-matrix
 
 A_bar = [A C -C eye(length(l)) -eye(length(u))];
@@ -32,22 +39,22 @@ b_bar = [-b; dl; -du; l; -u];
 optimal = false;
 counter = 1;
 alpha = 0;
-num_tol = 1.0e-10;
+num_tol = 1.0e-6;
 iter = 0;
 verbose = false;
 
 % Then we define the initial working set
-xk = zeros(length(H), 1);
+xk = x;
 A_bar_t = A_bar';
-Wk = A_bar_t*xk - b_bar == 0;
-[n,ma] = size(A);
+Wk = A_bar_t*xk - b_bar <= 1e-8;
+[n, ma] = size(A);
 [n, m] = size(A_bar);
 all_constraints = (1:m)';
 
 % All xk
 all_xk = xk;
 
-while ~optimal && iter < 10
+while ~optimal && iter < 100
 
     iter = iter + 1;
 
@@ -64,16 +71,18 @@ while ~optimal && iter < 10
     LHS = [row1; row2];
     RHS = -[gk; zeros(mk,1)];
 
-    p_mu = LHS \ RHS;
-    %disp(n);
-    p = p_mu(1:ma);
-    muk = p_mu(ma+1:mk);
+    [L, U, pe] = lu(LHS,'vector');
+    z = L \ RHS(pe); % Forward substitution
+    p_mu = U \ z;   % Backward substitution
+    disp(iter);
+    p = p_mu(1:n);
+    muk = p_mu(n+1:n+mk);
 
     % Then we use the null-space method (see slides EqualityConstrainedQP
     % from week 5).
 
     % If step size is 0, then we need to find the multipliers
-    if all(abs(p) < num_tol)
+    if norm(p) < num_tol
         if all(muk > 0)
             x_star = xk;
             mu_star = zeros(m,1);

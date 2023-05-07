@@ -1,5 +1,17 @@
 2.1 
 	- Optimal control problem generator
 	- Portfolio optimization problem generator
-	- Huber fitting problem generator
+	- Huber fitting problem generator (think it is correct)
 	- Support vector machine random problem generator
+2.5 
+    - Equality constraints must be fixde
+    - find feasible initial point
+    - repair primal active set
+    - test correctness
+    - benchmark
+    - remove linprog from initial point
+    - fill variables if itermax is hit
+2.6
+    - test correctness
+    - update stopping criterias
+    - benchmark
