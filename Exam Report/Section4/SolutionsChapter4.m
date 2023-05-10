@@ -361,4 +361,203 @@ ylabel('Function calls','interpreter','latex', 'FontSize',16,'Interpreter','LaTe
 
 saveas(gcf,'./Plots/RecycleProblemFunctionCalls.png')
 
+%% Testing of SQP with Line Search and Damped BFGS
+
+% Starting point
+x0 = [-5; 0];
+
+% Specification of constraints
+c1_l = 0;
+c1_u = 47;
+
+c2_l = 0;
+c2_u = 70;
+
+x1_l = -5;
+x1_u = 5;
+
+x2_l = -5;
+x2_u = 5;
+
+% SOLUTION: fmincon
+
+% Structure of constraints
+A = [-4 10; 4 -10];
+b = [c2_u; -c2_l];
+Aeq = [];
+beq = [];
+lb = [x1_l; x2_l];
+ub = [x1_u; x2_u];
+
+% Testing the functions
+[f,df,d2f] = objHimmelblau(x0);
+[cIq,dcIq,d2cIq] = conIqHimmelblau(x0);
+[cEq,dcEq,d2cEq] = conEqHimmelblau(x0);
+
+% Evaluate nonlinear constraints (Himmelblau)
+[c, ceq] = conHimmelblau(x0);
+
+%% Testing of SQP with Line Search and Damped BFGS
+
+options = struct();
+options.maxit = 2;
+options.BFGS = true;
+options.stepSolver = "quadprog";
+
+x0 = [0;0];
+A = [];
+b = [];
+Aeq = [];
+beq = [];
+lb = -50;
+ub = 50;
+
+% Make function calls clear
+
+pk = SQPLineSearchDampedBFGS(fun,x0,lb,ub,con,options);
+
+%% Testing the nonlinear constraint function for Himmelblau's Test Problem
+x_test = [1;2];
+[c,ceq,GC,GCeq] = conHimmelblau(x_test);
+
+if all(c == [11;16],'all') && all(GC == [6 -4;-1 10], 'all')
+    fprintf("Testing Constraint Function for Himmelblau: PASSED\n")
+else
+    fprintf("Testing Constraint Function for Himmelblau: FAILED\n")
+end
+
+%% Testing 'SQPLineSearchDampedBFGS'
+
+% This code tests the core algorithm
+x0 = [2;2];
+lb = [-5; -5];
+ub = [5; 5];
+cub = [47; 70];
+clb = [0; 0];
+nonlcon = @(x) conHimmelblau(x);
+fun = @(x) objHimmelblau(x);
+
+% Set options
+options = struct();
+options.maxit = 100;
+options.BFGS = true;
+options.stepSolver = "quadprog";
+options.l1Penalty = 1;
+options.lineSearch = "slides";
+options.convergenceRequirement = 1e-10;
+
+[x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options);
+
+% Plotting sequence
+% SETTINGS FOR LABELS, AXIS' AND FILL
+
+upper_colorbar = 200;
+lower_colorbar = 0;
+granularity_colorbar = 10;
+
+% BOUNDS FOR HIMMELBLAU
+
+c1_l = 0;
+c1_u = 47;
+
+c2_l = 0;
+c2_u = 70;
+
+x1_l = -5;
+x1_u = 5;
+
+x2_l = -5;
+x2_u = 5;
+
+% OBJECTIVE VALUES ON GRID
+
+x1 = x1_l:0.05:x1_u;
+x2 = x2_l:0.05:x2_u;
+[X1, X2] = meshgrid(x1,x2);
+F = objfunHimmelblau(X1, X2);
+
+v = lower_colorbar:granularity_colorbar:upper_colorbar;
+contour(X1,X2,F,v,"linewidth",2);
+colorbar;
+
+% CONSTRAINT BOUNDARIES
+
+yc11 = (x1 + 2).^2 - c1_l; % >= x2
+yc12 = (x1 + 2).^2 - c1_u; % <= x2 - c1_u
+yc21 = (4 .* x1 + c2_l)./10; % <= x2
+yc22 = (4 .* x1 + c2_u)./10; % >= x2
+
+% CONSTRAINT COLORS AND TRANSPARANCY
+
+% ORANGE: [0.8500 0.3250 0.0980]
+% BLUE: [0.6350 0.0780 0.1840]
+
+yc1_color = [0 0 0];
+yc1_density_l = 0.7; 
+yc1_density_u = 0.7; 
+
+yc2_color = [0 0 0];
+yc2_density_l = 0.7;
+yc2_density_u = 0.7;
+
+% MAKE PLOT
+
+hold on
+
+    % Constraint 1
+    h1 = fill([x1_l x1],[x2_u yc11], yc1_color, "facealpha",yc1_density_l);
+    h2 = fill([x1_l x1 x1_u],[x2_l yc12 x2_l], yc1_color, "facealpha",yc1_density_u);
+
+    % Constraint 2
+    h3 = fill([x1_l x1 x1_u],[x2_l yc21 x2_l], yc2_color, "facealpha",yc2_density_l);
+    h4 = fill([x1_l x1 x1_u],[x2_u yc22 x2_u], yc2_color, "facealpha",yc2_density_u);
+
+    % Points
+    h5 = plot(-3.5485, -1.4194,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h6 = plot(-0.2983,  2.8956,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h7 = plot(-3.6546,  2.7377,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h8 = plot(3.216440661, 1.286576264,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+    h9 = plot(3,2,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h10 = plot(-1.4242,0.3315,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+    h11 = plot(-3.0730,-0.0814,'black', 'MarkerSize', 16, 'Marker', 'diamond', 'MarkerFaceColor', '#D95319');
+    h12 = plot(0.0867, 2.8843,'black', 'MarkerSize', 16, 'Marker', 'diamond', 'MarkerFaceColor', '#D95319');
+    h13 = plot(-0.4870, -0.1948,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+
+    % Plot points from sequence
+    h14 = plot(solverInformation.stepSequence(1,:), solverInformation.stepSequence(2,:), "LineStyle", ":", 'LineWidth',3, 'color', 'black');
+
+hold off
+
+legend([h5, h11, h13, h14],{'Local Minimum', 'Saddle Point', 'Local Maximum', 'SQP path'})
+
+xlim([x1_l x1_u])
+ylim([x2_l x2_u])
+xlabel('$x_{1}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+
+
+saveas(gcf,'./Plots/ContourHB_dampedBFGS_quadprog.png')
+
+%% Testing 'SQPTrustRegion'
+
+% This code specifies the problem structure
+x0 = [1;1];
+lb = [-5; -5];
+ub = [5; 5];
+cub = [47; 70];
+clb = [0; 0];
+nonlcon = @(x) conHimmelblau(x);
+fun = @(x) objHimmelblau(x);
+
+% Set options
+options = struct();
+options.maxIter = 2;
+options.l1Penalty = 30;
+options.precision = 15;
+options.eta = 0;
+options.trustRegion = 0.5;
+
+[x, solverInformation] = SQPTrustRegion(fun,x0,lb,ub,clb,cub,nonlcon,options);
+
+
 
