@@ -47,7 +47,7 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
     % Compute steps until convergence test is satisfied
     while ~converged && (iter < maxit)
 
-        % 1) Solve Equation 5.18 (page X in N&W)
+        % 1) Solve Equation 18.11 on page 533 in N&W
         % We start by formulating the nonlinear constraints (but without the x's for quadprog).
         % For quadprog, we need the form Aeq*x = beq and A*x <= b.
         % We formulate it initially as Ceq + deq = 0 and C + d >= 0.
@@ -64,6 +64,7 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
             end
             C = [];
             d = [];
+            % TO DO: Account for slack variables t_{i}
             if ~isempty(cub)
                 C = [C; -GC' zeros(m,2*meq+2*m)];
                 d = [d; cub-c];
