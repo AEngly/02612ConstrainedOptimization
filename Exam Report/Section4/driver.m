@@ -553,7 +553,7 @@ fun = @(x) objHimmelblau(x);
 
 % Set options
 options = struct();
-options.maxIter = 2;
+options.maxIter = 100;
 options.l1Penalty = 30;
 options.precision = 15;
 options.eta = 0;

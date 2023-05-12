@@ -83,19 +83,6 @@ function [x_final, solverInformation] = SQPTrustRegion(fun,x0,lb,ub,clb,cub,nonl
         b(1:2*miq+2*n,1) = [cub - c; c - clb; ub - xk; xk - lb];
         b(end-1:end,1) = [trustRegion;0];
 
-        fprintf("Display H:\n")
-        disp(H);
-        fprintf("Display d:\n")
-        disp(d);
-        fprintf("Display Aeq:\n")
-        disp(Aeq);
-        fprintf("Display beq:\n")
-        disp(beq);
-        fprintf("Display A:\n")
-        disp(A);
-        fprintf("Display b:\n")
-        disp(b);
-
         % The system is now defined as
         % Aeq + beq = 0
         % A   + b  >= 0
@@ -108,12 +95,13 @@ function [x_final, solverInformation] = SQPTrustRegion(fun,x0,lb,ub,clb,cub,nonl
         
         % 1.5) Separate primal variables
         pk = primal(1:n);
+        disp(pk);
         w = primal(n+1:n+meq);
         v = primal(n+meq+1:n+meq*2);
         t = primal(n+meq*2+1:end-1);
         s = primal(end);
 
-        % PART 2: Update penalty parameter
+        % PART 2: Update penalty parameter (Powell update -> slides 9A page 22)
         lambdaHat = dual.ineqlin(1:2*n+2*miq);
         lambdaNorm = vecnorm(lambdaHat,'Inf');
         mu = max(1/2*(mu+lambdaNorm),lambdaNorm);
