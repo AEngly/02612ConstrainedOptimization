@@ -430,8 +430,8 @@ end
 
 % This code tests the core algorithm
 x0 = [2;2];
-lb = [-5; -5];
-ub = [5; 5];
+xlb = [-5; -5];
+xub = [5; 5];
 cub = [47; 70];
 clb = [0; 0];
 nonlcon = @(x) conHimmelblau(x);
@@ -447,6 +447,8 @@ options.lineSearch = "slides";
 options.convergenceRequirement = 1e-10;
 
 [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options);
+
+%%
 
 % Plotting sequence
 % SETTINGS FOR LABELS, AXIS' AND FILL
