@@ -19,14 +19,35 @@
 
 
 %% Test problems
-%RandomQP settings from OSQP paper
-alpha = 0.01;
-beta = 10; % setting from OSQP paper
-density = 0.15; % 15% must be non-zero
-n = 100;
+
+% Initial test problem
+
+maxiter = 100;
+H = eye(2);
+g = [-2;-5];
+A = [1;-1];
+b = zeros(1,1);
+C = [ 1 -1; -2 -2];
+dl = [-2; -6];
+du = [2; -2];
+l = zeros(2,1);
+u = zeros(2,0);
+
+[xas] = test(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(xas-xstar)
+
+%% RandomQP settings from OSQP paper
+
 
 
 %% 2.5 test Primal-active set
+alpha = 0.01;
+beta = 2; % setting from OSQP paper
+density = 0.15; % 15% must be non-zero
+n = 2;
 maxiter=10000;
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
@@ -38,9 +59,10 @@ x = all_xk(:,end);
 norm(x-xstarx)
 
 %% test huber fitting
-n=2;
-beta = 1;
+n=5;
+beta = 100;
 maxiter=1000;
+density = 0.15;
 
 [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
 
@@ -50,7 +72,49 @@ xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
 x = all_xk(:,end);
 norm(x-xstarx)
+%% test portfolio
+
+k = 10;
+gamma = 1;
+density = 0.50;
+maxiter=100;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorPortfolioOptimizationQP(k,gamma,density);
+
+[x] = test(H,g,A,b,C,dl,du,l,u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
 %% 2.7 test for InteriorPoint
+
+%% Test problems
+
+% Initial test problem
+
+maxiter = 100;
+H = eye(2);
+g = [-2;-5];
+A = [1;-1];
+b = zeros(1,1);
+C = [ 1 -1; -2 -2];
+dl = [-2; -6];
+du = [2; -2];
+l = zeros(2,1);
+u = zeros(2,0);
+
+[xas] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(xas-xstar)
+
+%% 
+alpha = 0.01;
+beta = 2; % setting from OSQP paper
+density = 0.15; % 15% must be non-zero
+n = 2;
+
 maxiter=30;
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
@@ -60,10 +124,25 @@ xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
 norm(x-xstarx)
 
+%% test for random qp
+
+alpha = 0.01;
+density = 0.15; % 15% must be non-zero
+n = 100;
+
+[H,g,A,b,C,dl,du,l,u] = RandomQP_(n,alpha,density);
+
+[x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
+
 %% test huber fitting
-n=5;
+n=2;
 beta = 10;
 maxiter=100;
+density = 0.15;
 
 [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
 [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
@@ -71,6 +150,21 @@ maxiter=100;
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
 norm(x-xstarx)
+%% test portfolio
+
+k = 10;
+gamma = 1;
+density = 0.50;
+maxiter=100;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorPortfolioOptimizationQP(k,gamma,density);
+
+[x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
+
 %%
 % Options for quadprog
 options =  optimoptions('quadprog','Display','off');

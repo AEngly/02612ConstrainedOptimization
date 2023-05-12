@@ -21,10 +21,14 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density)
 %
 % ---------------- IMPLEMENTATION --------------
 
-    m = round(beta*n); %beta = 100
-    % Create empty A and b, as no equality constraints are considered
-    Ax = sprandn(n,m,density); %density = 0.15
-    Ax = full(Ax);
+    m = round(beta*n);
+
+    Ax = zeros(n,m);
+    while n ~= rank(Ax)
+    Ax = full(sprandn(n,m,density));
+    end
+
+    rank(Ax)
     v = randn(n,1)/n;
     e = randn(m,1)/4;
     e(randsample(m,floor(m/20))) = rand(1,floor(m/20))*10;
@@ -40,12 +44,18 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density)
     C = zeros(n+3*m,0);
     dl = zeros(0,1);
     du = zeros(0,1);
-    % lower limit for x and u set to a large enough number.
-    l = [-1e12*ones(n,1); -1e12*ones(m,1); zeros(m,1); zeros(m,1);];
-    u = zeros(n+3*m,0);
 
+    % lower limit for x and u set to a large enough number.
+    l = [-inf*ones(n,1); -inf*ones(m,1); zeros(m,1); zeros(m,1);];
+    u = inf*ones(n+3*m,1);
+    
+    e = 0.0000001;
     H = zeros(n+3*m,n+3*m);
+    %H(1:n,1:n) = e*eye(n);
     H(n+1:n+m,n+1:n+m) = eye(m);
+    %H(n+m+1:n+2*m,n+m+1:n+2*m) = e*eye(m);
+    %H(n+2*m+1:n+3*m,n+2*m+1:n+3*m) = e*eye(m);
+    
 
     g = [zeros(n,1); zeros(m,1); ones(m,1)*2; ones(m,1)*2];
 

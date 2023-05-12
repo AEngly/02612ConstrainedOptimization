@@ -154,7 +154,8 @@ while ~terminate
     rC = s+dbar-Cbar'*x;
     rsz = (s.*z);
     mu = z'*s/mc;
-
+    
+    disp(x(1:2));
     % Check convergence
     terminate = (k >= itermax | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
 end

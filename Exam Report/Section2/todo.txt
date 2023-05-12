@@ -4,10 +4,11 @@
 	- Huber fitting problem generator (think it is correct)
 	- Support vector machine random problem generator
 2.5 
-    - Equality constraints must be fixde
-    - find feasible initial point
+    - Equality constraints must be fixed
+    - find feasible initial point(seems to work)
     - repair primal active set
     - test correctness
+        - find test problem from book or exercises
     - benchmark
     - remove linprog from initial point
     - fill variables if itermax is hit
@@ -15,3 +16,8 @@
     - test correctness
     - update stopping criterias
     - benchmark
+
+
+Questions:
+
+What should the QT be for the optimal control problem?
