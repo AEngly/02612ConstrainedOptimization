@@ -8,7 +8,7 @@ function [f, df, d2f] = objHimmelblau(x)
     f = (x1^2 + x2 - 11)^2 + (x1 + x2^2 - 7)^2;
 
     %Compute gradient
-    df = [4*x1*(x1^2 + x2 - 11) + 2*(x1 + x2^2 - 7); x2*(x1^2 + x2 - 11) + 4*x2*(x1 + x2^2 - 7)];
+    df = [4*x1*(x1^2 + x2 - 11) + 2*(x1 + x2^2 - 7); 2*(x1^2 + x2 - 11) + 4*x2*(x1 + x2^2 - 7)];
 
     %Compute Hessian
     d2f = zeros(2,2);

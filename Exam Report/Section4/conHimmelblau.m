@@ -9,11 +9,9 @@ function [c,ceq,GC,GCeq] = conHimmelblau(x)
     c = zeros(2,1);
 
     % Evaluate constraints
-    c(1) = (x1 + 2)^2 + x2;
+    c(1) = (x1 + 2)^2 - x2;
     c(2) = -4*x1 + 10*x2;
 
-    
-    
     % Compute gradients
     GC1 = [2*(x1 + 2); -1];
     GC2 = [-4; 10];

@@ -1,4 +1,4 @@
-function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb,cub,nonlcon,options)
+function [primal_final, dual_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options)
 
     % Auxiliary variables
     iter = 0;
@@ -7,10 +7,10 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
     stepSolver = options.stepSolver;
     lineSearch = options.lineSearch;
     converged = false;
-    sigma = 1;
     rho = 0.9; % (has to be between 0 and 1)
-    l1_penalty = options.l1Penalty;
-    mu_margin = 1e-3;
+    muk = options.l1Penalty;
+    l1Penalty = options.l1Penalty;
+    mu_margin = 1;
 
     % Create a struct to store information
     solverInformation = struct();
@@ -31,15 +31,46 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
 
     % Compute necessary values in first step
     [c,ceq,GC,GCeq] = nonlcon(xk);
-    [f, fGrad, H] = fun(xk);
+    [f, fGrad] = fun(xk);
 
     % Save number of variables
     n = length(x0);
-    m = length(c);
+    miq = length(c);
     meq = length(ceq);
 
+    % Save number of bounds
+    m_cub = length(cub);
+    m_clb = length(clb);
+    m_xub = length(xub);
+    m_xlb = length(xlb);
+
+    % Specify large number and small number to cope with missing bounds on
+    % constraints (only if partially specified)
+    mBIG = 10^6;
+    mSMALL = -10^6;
+
+    % Append to ensure that all constraints get bounds if only partially
+    % specified
+
+    if m_cub > 0 && miq > m_cub
+        cub = [cub; mBIG*ones(miq-m_cub,1)];
+        m_cub = miq;
+    end
+    if m_clb > 0 && miq > m_clb
+        clb = [clb; mSMALL*ones(miq-m_clb,1)];
+        m_clb = miq;
+    end
+    if m_xub > 0 && n > m_xub
+        xub = [xub; mBIG*ones(n-m_xub,1)];
+        m_xub = n;
+    end
+    if m_xlb > 0 && n > m_xlb
+        xlb = [xlb; mSMALL*ones(n-m_xlb,1)];
+        m_xlb = n;
+    end
+
     % Require initial dual variables
-    lk = zeros(meq+2*m,1);
+    lk = ones(4*meq+2*m_cub+2*m_clb+2*m_xub+2*m_xlb,1);
 
     % Initialize positive definite matrix for damped BFGS
     Bk = eye(n);
@@ -55,47 +86,62 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
         % In addition, we add infeasible handling.
 
         if stepSolver == "quadprog"  
-            % Create matrices
+            
             Ceq = [];
             deq = [];
             if ~isempty(ceq)
-                Ceq = [Ceq; GCeq' -eye(meq) eye(meq) zeros(meq,2*m)];
+                Ceq = [Ceq; GCeq' -eye(meq) eye(meq) zeros(meq,m_cub+m_clb+m_xub+m_xlb)];
                 deq = [deq; ceq];
             end
+
             C = [];
             d = [];
-            % TO DO: Account for slack variables t_{i}
             if ~isempty(cub)
-                C = [C; -GC' zeros(m,2*meq+2*m)];
+                blockRow = [-GC'  zeros(miq,meq) zeros(miq,meq) eye(m_cub) zeros(miq,m_clb) zeros(miq,m_xub) zeros(miq,m_xlb)];
+                fprintf("Display blockrow in 1 if:\n")
+                disp(blockRow);
+                C = [C; blockRow];
                 d = [d; cub-c];
             end
             if ~isempty(clb)
-                C = [C; GC' zeros(m,2*meq+2*m)];
+                blockRow = [GC'  zeros(miq,meq) zeros(miq,meq) zeros(miq,m_cub) eye(m_clb) zeros(miq,m_xub) zeros(miq,m_xlb)];
+                fprintf("Display blockrow in 2 if:\n")
+                disp(blockRow);
+                C = [C; blockRow];
                 d = [d; c-clb];
             end
-
-            % Extend lower and upper bound to quadprog
-            lb_new = [lb; zeros(2*meq+2*m,1)];
-            ub_new = [ub; inf*ones(2*meq+2*m,1)];
+            if ~isempty(xub)
+                blockRow = [-eye(m_xub)  zeros(m_xub,meq) zeros(m_xub,meq) zeros(m_xub,miq) zeros(m_xub) eye(m_xub) zeros(m_xub)];
+                fprintf("Display blockrow in 3 if:\n")
+                disp(blockRow);
+                C = [C; blockRow];
+                d = [d; xub - xk];
+            end
+            if ~isempty(xlb)
+                fprintf("Display blockrow in 4 if:\n")
+                blockRow = [eye(m_xlb)  zeros(m_xlb,meq) zeros(m_xlb,meq) zeros(m_xlb,miq) zeros(m_xlb) zeros(m_xlb) eye(m_xlb)];
+                disp(blockRow);
+                C = [C; blockRow];
+                d = [d; xk - xlb];
+            end
+            C = [C; zeros(2*meq+m_cub+m_clb+m_xub+m_xlb,n) eye(2*meq+m_cub+m_clb+m_xub+m_xlb)];
+            d = [d; zeros(2*meq+m_cub+m_clb+m_xub+m_xlb,1)];
 
         end
 
-        % This section should be uncommented when it is run with another
-        % solver than quadprog
-        %if ~isempty(ub)
-        %    C = [C; -eye(length(xk)) zeros(m,2*meq+2*m+2*n)];
-        %    d = [d; ub-xk];
-        %end
-        %if ~isempty(lb)
-        %    C = [C; eye(length(xk)) zeros(m,2*meq+2*m+2*n)];
-        %    d = [d; xk-lb];
-        %end
-        %C = [C; zeros(n) zeros(m,2*meq+2*m+2*n)];
-        %d = [d; zeros(n,1)];
-
         % Then we create F and G as stated in the report
-        F = [fGrad; l1_penalty*ones(2*meq + 2*m,1)];
-        G = [Bk zeros(n,2*meq+2*m); zeros(2*meq+2*m,n) zeros(2*meq+2*m,2*meq+2*m)];
+        F = [fGrad; l1Penalty*ones(2*meq+m_cub+m_clb+m_xub+m_xlb,1)];
+        mG = 2*meq+m_cub+m_clb+m_xub+m_xlb;
+        G = [Bk zeros(n,mG); zeros(mG,n) zeros(mG,mG)];
+
+        fprintf("Display Aeq:\n")
+        disp(Ceq);
+        fprintf("Display beq:\n")
+        disp(-deq);
+        fprintf("Display A:\n")
+        disp(-C);
+        fprintf("Display b:\n")
+        disp(d);
 
         % Translate to quadprog syntax
         Aeq = Ceq;
@@ -104,63 +150,32 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
         b = d;
 
         % 2) Solving local QP subproblem
-        [steps,fval,exitflag,output,dual] = quadprog(G,F,A,b,Aeq,beq,lb_new,ub_new,x0,optionsQP);
+        [steps,fval,exitflag,output,dual] = quadprog(G,F,A,b,Aeq,beq,[],[],[],optionsQP);
+        if ~(exitflag == 1)
+            fprintf("Step could not be computed!");
+        end
         pk = steps(1:n);
         yk1 = dual.eqlin;
         zk1 = dual.ineqlin;
         lk1 = [yk1;zk1];
 
         % Compute step size of lambda
+        disp(size(A));
+        disp(size(lk));
+        disp(size(lk1));
         p_lambda = lk1 - lk;
 
-        if lineSearch == "second-order"
-
-            % 3) Use Line Search from slide 6/11 ("Lecture 09B_SQP")
-            alpha = 1;
-            fun_alpha = fun(xk + alpha*pk);
-            [c_alpha,ceq_alpha] = nonlcon(xk + alpha*pk);
-    
-            % Powell's update of penalty parameters
-            lambda = abs(yk1);
-            mu = abs(zk1);
-    
-            % Compute merit functions and its directional derivative
-            phi_alpha = fun_alpha + lambda'*abs(ceq_alpha) + mu'*abs(min(0,c_alpha));
-            phi_0 = f + lambda'*abs(ceq) + mu'*abs(c);
-            d_phi_0 = fGrad'*pk - lambda'*abs(ceq) + mu'*abs(min(0,c_alpha));
-    
-            while ~(phi_alpha <= phi_0 + armijoC*d_phi_0*alpha)
-    
-                % Update alpha
-                a = (phi_alpha - (phi_0 + d_phi_0*alpha))/(alpha^2);
-                alpha_min = -phi_0/(2*a);
-                alpha = min(tau*alpha, max(alpha_min,armijoC*alpha));
-    
-                % Repeat first step
-                fun_alpha = fun(xk + alpha*pk);
-                [c_alpha,ceq_alpha] = nonlcon(xk + alpha*pk);
-    
-                % Compute merit functions and its directional derivative
-                phi_alpha = fun_alpha + lambda'*abs(ceq_alpha) + mu'*abs(min(0,c_alpha));
-                phi_0 = f + lambda'*abs(ceq) + mu'*abs(c);
-                d_phi_0 = fGrad'*pk - lambda'*abs(ceq) + mu'*abs(min(0,c_alpha));
-    
-            end
-    
-            % Accept step
-            xk = xk + alpha*pk;
-
-        elseif lineSearch == "slides"
+        if lineSearch == "slides"
 
             % Initialize alpha to 1
             alpha = 1;
 
-            % Compute constraints and function with full step
+            % Compute constraints and function with full step (part 1)
             fun_alpha = fun(xk + alpha*pk);
             [c,ceq] = nonlcon(xk);
             [c_alpha,ceq_alpha] = nonlcon(xk + alpha*pk);
 
-            % Take care of bound constraints
+            % Compute constraints and function with full step (part 2)
             c_alpha_ineq = [];
             c_ineq = [];
             ck = ceq;
@@ -172,10 +187,21 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
                 c_alpha_ineq = [c_alpha_ineq; c_alpha-clb];
                 c_ineq = [c_ineq; c-clb];
             end
+            if ~isempty(xub)
+                c_alpha_ineq = [c_alpha_ineq; xub-(xk + alpha*pk)];
+                c_ineq = [c_ineq; xub-xk];
+            end
+            if ~isempty(xlb)
+                c_alpha_ineq = [c_alpha_ineq; (xk + alpha*pk) - xlb];
+                c_ineq = [c_ineq; xk-xlb];
+            end
 
-            % Compute mu in iteration k
+            % Compute constraints and function with full step (part 2)
             ck = [ck; c_ineq];
-            muk = (fGrad'*pk + (1/2)*pk'*Bk*pk)/((1-rho)*norm(ck,1)) + mu_margin;
+
+            % Compute penalty in each iteration
+            %muk = (fGrad'*pk + (1/2)*pk'*Bk*pk)/((1-rho)*norm(ck,1)) + mu_margin;
+            muk = max(max(abs(lk),1/2*(muk+abs(lk))));
 
             % Compute merit functions and its directional derivative
             term_ceq_alpha = muk*sum(abs(ceq_alpha));
@@ -212,6 +238,12 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
                 if ~isempty(clb)
                     c_alpha_ineq = [c_alpha_ineq; c_alpha-clb];
                 end
+                if ~isempty(xub)
+                    c_alpha_ineq = [c_alpha_ineq; xub-xk];
+                end
+                if ~isempty(xlb)
+                    c_alpha_ineq = [c_alpha_ineq; xk-xlb];
+                end
     
                 % Compute merit functions and its directional derivative
                 term_ceq_alpha = muk*sum(abs(ceq_alpha));
@@ -227,6 +259,9 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
             
             end
 
+            fprintf("Printing value of alpha:\n")
+            disp(alpha);
+
             % Accept step size
             xk = xk + alpha*pk;
             lk = lk + alpha*p_lambda;
@@ -234,19 +269,28 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
             % Store step
             solverInformation.stepSequence = [solverInformation.stepSequence xk];
 
+        else
+            % Accept step size
+            alpha = 1;
+            xk = xk + alpha*pk;
+            lk = lk + alpha*p_lambda;
         end
 
-        % In order to compute the lagrangian, we need the full setup
+        disp(xk);
+
+        % In order to compute the lagrangian, we need original xk and new
+        % iterate
         [c_xk,ceq_xk,GC_xk,GCeq_xk] = nonlcon(xk-alpha*pk);
         [c_xk1,ceq_xk1,GC_xk1,GCeq_xk1] = nonlcon(xk);
         [fun_xk, fun_xkGrad] = fun(xk - alpha*pk);
         [fun_xk1, fun_xk1Grad] = fun(xk);
 
         % Then we construct the appropriate row vector
-        gGrad = [-GC_xk GC_xk];
-        LGrad = fun_xkGrad - gGrad*lk;
-        gGrad1 = [-GC_xk1 GC_xk1];             
-        LGrad1 = fun_xk1Grad - gGrad1*lk;
+        mBC = m_cub + m_clb + m_xlb + m_xub;
+        gGrad = [-GC_xk GC_xk -eye(n) eye(n) zeros(n,mBC)];
+        LGrad = fun_xkGrad - gGrad*lk1;
+        gGrad1 = [-GC_xk1 GC_xk1 -eye(m_xub) eye(m_xlb) zeros(n,mBC)];             
+        LGrad1 = fun_xk1Grad - gGrad1*lk1;
         
         % Then get pk and qk
         sk = alpha*pk;
@@ -266,6 +310,7 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
         Bk = Bk + (rk*rk')/(pk'*rk) - ((Bk*pk)*(Bk*pk)')/(pk'*Bk*pk);
 
         % Iteration completed
+        fprintf("\nFinished interation %d!\n", iter);
         iter = iter + 1;
 
         % Test if converged
@@ -278,7 +323,8 @@ function [x_final, solverInformation] = SQPLineSearchDampedBFGS(fun,x0,lb,ub,clb
             solverInformation.iterations = iter;
 
             % Set results
-            x_final = xk;
+            primal_final = xk;
+            dual_final = lk1;
 
         end
 
