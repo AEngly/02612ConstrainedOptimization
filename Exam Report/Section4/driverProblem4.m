@@ -963,10 +963,10 @@ ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Col
 %    function.
 
 % Test points (starting points)
-x1 = [2.4;2.25];
-x2 = [0;0];
+x1 = [1;2.5];
+x2 = [3.5;3.5];
 x3 = [1;1];
-x4 = [0.5;0.5];
+x4 = [1;1];
 
 % This code tests the core algorithm
 xlb = [-5; -5];
@@ -1091,9 +1091,148 @@ ylim([x2_l x2_u])
 xlabel('$x_{1}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
 ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
 
+%% 4.6.3) Test of Simple SQP solver (with Line Search and BFGS and infeasibility handling)
 
+% This section contains tests for a SQP with Line Search and BFGS
+% approximation.
+% The implementation is found in the file named: SQPSimpleDamedBFGS.m
 
+% The plots should show the paths on Himmelblau's Test Problem.
+%
+% We should also provide statistics from scalable problems:
+% 1) Number of iterations
+% 2) Average time per iteration
+% 3) Compare difference between solutions of our solver and a library
+%    function.
 
+% Test points (starting points)
+x1 = [-1.35;-0.35];
+x2 = [-0.85;0.2];
+x3 = [1;1];
+x4 = [-3.25;0.35];
+
+% This code tests the core algorithm
+xlb = [-5; -5];
+xub = [5; 5];
+cub = [70; 70];
+clb = [0; 0];
+nonlcon = @(x) conHimmelblau(x);
+fun = @(x) objHimmelblau(x);
+
+% Set options
+options = struct();
+options.maxit = 1000;
+options.BFGS = true;
+options.stepSolver = "quadprog";
+options.l1Penalty = 100;
+options.lineSearch = "all";
+options.convergenceRequirement = sqrt(1e-16);
+
+[primal_final_1, dual_final_1, solverInformation_1] = SQP_LS_BFGS_Infeasiblility(fun,x1,xlb,xub,clb,cub,nonlcon,options);
+[primal_final_2, dual_final_2, solverInformation_2] = SQP_LS_BFGS_Infeasiblility(fun,x2,xlb,xub,clb,cub,nonlcon,options);
+[primal_final_3, dual_final_3, solverInformation_3] = SQP_LS_BFGS_Infeasiblility(fun,x3,xlb,xub,clb,cub,nonlcon,options);
+[primal_final_4, dual_final_4, solverInformation_4] = SQP_LS_BFGS_Infeasiblility(fun,x4,xlb,xub,clb,cub,nonlcon,options);
+
+% Plotting sequence
+% SETTINGS FOR LABELS, AXIS' AND FILL
+
+upper_colorbar = 200;
+lower_colorbar = 0;
+granularity_colorbar = 10;
+
+% BOUNDS FOR HIMMELBLAU
+
+c1_l = 0;
+c1_u = 47;
+
+c2_l = 0;
+c2_u = 70;
+
+x1_l = -5;
+x1_u = 5;
+
+x2_l = -5;
+x2_u = 5;
+
+% OBJECTIVE VALUES ON GRID
+
+x1 = x1_l:0.05:x1_u;
+x2 = x2_l:0.05:x2_u;
+[X1, X2] = meshgrid(x1,x2);
+F = objfunHimmelblau(X1, X2);
+
+v = lower_colorbar:granularity_colorbar:upper_colorbar;
+contour(X1,X2,F,v,"linewidth",2);
+colorbar;
+
+% CONSTRAINT BOUNDARIES
+
+yc11 = (x1 + 2).^2 - c1_l; % >= x2
+yc12 = (x1 + 2).^2 - c1_u; % <= x2 - c1_u
+yc21 = (4 .* x1 + c2_l)./10; % <= x2
+yc22 = (4 .* x1 + c2_u)./10; % >= x2
+
+% CONSTRAINT COLORS AND TRANSPARANCY
+
+% ORANGE: [0.8500 0.3250 0.0980]
+% BLUE: [0.6350 0.0780 0.1840]
+
+yc1_color = [0 0 0];
+yc1_density_l = 0.7; 
+yc1_density_u = 0.7; 
+
+yc2_color = [0 0 0];
+yc2_density_l = 0.7;
+yc2_density_u = 0.7;
+
+% MAKE PLOT
+
+hold on
+
+    % Constraint 1
+    h1 = fill([x1_l x1],[x2_u yc11], yc1_color, "facealpha",yc1_density_l);
+    h2 = fill([x1_l x1 x1_u],[x2_l yc12 x2_l], yc1_color, "facealpha",yc1_density_u);
+
+    % Constraint 2
+    h3 = fill([x1_l x1 x1_u],[x2_l yc21 x2_l], yc2_color, "facealpha",yc2_density_l);
+    h4 = fill([x1_l x1 x1_u],[x2_u yc22 x2_u], yc2_color, "facealpha",yc2_density_u);
+
+    % Points
+    h5 = plot(-3.5485, -1.4194,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h6 = plot(-0.2983,  2.8956,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h7 = plot(-3.6546,  2.7377,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h8 = plot(3.216440661, 1.286576264,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+    h9 = plot(3,2,'black', 'MarkerSize', 16, 'Marker', 'v', 'MarkerFaceColor', '#EDB120');
+    h10 = plot(-1.4242,0.3315,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+    h11 = plot(-3.0730,-0.0814,'black', 'MarkerSize', 16, 'Marker', 'diamond', 'MarkerFaceColor', '#D95319');
+    h12 = plot(0.0867, 2.8843,'black', 'MarkerSize', 16, 'Marker', 'diamond', 'MarkerFaceColor', '#D95319');
+    h13 = plot(-0.4870, -0.1948,'black', 'MarkerSize', 16, 'Marker', '^', 'MarkerFaceColor', '#A2142F');
+
+    % Plot solution point
+    h14 = plot(solverInformation_1.primalSequence(1,end), solverInformation_1.primalSequence(2,end), 'black', 'MarkerSize', 16, 'Marker', 'pentagram', 'MarkerFaceColor', "#FF0000");
+    h15 = plot(solverInformation_1.primalSequence(1,1:end-1), solverInformation_1.primalSequence(2,1:end-1), 'black', 'LineStyle', "--", 'LineWidth', 2);
+
+    % Plot solution point
+    h16 = plot(solverInformation_2.primalSequence(1,end), solverInformation_2.primalSequence(2,end), 'black', 'MarkerSize', 16, 'Marker', 'pentagram', 'MarkerFaceColor', "#FF0050");
+    h17 = plot(solverInformation_2.primalSequence(1,1:end-1), solverInformation_2.primalSequence(2,1:end-1), 'black', 'LineStyle', "--", 'LineWidth', 2);
+    
+    % Plot solution point
+    h18 = plot(solverInformation_3.primalSequence(1,end), solverInformation_3.primalSequence(2,end), 'black', 'MarkerSize', 16, 'Marker', 'pentagram', 'MarkerFaceColor', "#FF0100");
+    h19 = plot(solverInformation_3.primalSequence(1,1:end-1), solverInformation_3.primalSequence(2,1:end-1), 'black', 'LineStyle', "--", 'LineWidth', 2);
+    
+    % Plot solution point
+    h20 = plot(solverInformation_4.primalSequence(1,end), solverInformation_4.primalSequence(2,end), 'black', 'MarkerSize', 16, 'Marker', 'pentagram', 'MarkerFaceColor', "#FF0150");
+    h21 = plot(solverInformation_4.primalSequence(1,1:end-1), solverInformation_4.primalSequence(2,1:end-1), 'black', 'LineStyle', "--", 'LineWidth', 2);
+
+hold off
+
+legend([h5, h11, h13, h15, h14, h16, h18, h20],{'Local Minimum', 'Saddle Point', 'Local Maximum', 'Path', sprintf('Solution (%0.2f, %0.2f)',x1(1), x1(2)), sprintf('Solution (%0.2f, %0.2f)',x2(1), x2(2)), sprintf('Solution (%0.2f, %0.2f)',x3(1),x3(2)), sprintf('Solution (%0.2f, %0.2f)',x4(1),x4(2))}, 'Location','southeast')
+
+xlim([x1_l x1_u])
+ylim([x2_l x2_u])
+%title('Contour Plot of Linear Program', 'FontSize',20)
+xlabel('$x_{1}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
 
 %% 4.7) Testing of SQP with Trust Region
 

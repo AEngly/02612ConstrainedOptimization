@@ -1,4 +1,4 @@
-function [primal_final, dual_final, solverInformation] = SQPSimpleLSDampedBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options)
+function [primal_final, dual_final, solverInformation] = SQP_LS_BFGS_Infeasiblility(fun,x0,xlb,xub,clb,cub,nonlcon,options)
 
     % Auxiliary variables
     iter = 0;
@@ -35,6 +35,7 @@ function [primal_final, dual_final, solverInformation] = SQPSimpleLSDampedBFGS(f
     % Initialize penalties for Powell exact merit
     eqPenalty = 0; % NOT IMPLEMENTED CURRENTLY
     ineqPenalty = lk+1;
+    slackPenalty = 2;
 
     % Create a struct to store information
     solverInformation = struct();
@@ -61,13 +62,18 @@ function [primal_final, dual_final, solverInformation] = SQPSimpleLSDampedBFGS(f
         d = c;
 
         % Then construct H,f,A,b for quadprog
-        H = Bk;
-        f = fGrad;
-        A = -C;
-        b = d;
+        H = [Bk zeros(n,m); zeros(n,n) zeros(n,m)];
+        f = [fGrad; slackPenalty*ones(m,1)];
+        A = [-C eye(m); zeros(m,m) -eye(m)];
+        b = [d; zeros(m,1)];
 
         % Quadprog
-        [pk,fval,exitflag,output,dual] = quadprog(H,f,A,b,[],[],[],[],[],optionsQP);
+        [primal,fval,exitflag,output,dual] = quadprog(H,f,A,b,[],[],[],[],[],optionsQP);
+
+        % Extract the right variables
+        pk = primal(1:n);
+        t = primal(n+1:end);
+        disp(t);
 
         % Check if it succeded
         if ~(exitflag == 1)
@@ -81,7 +87,7 @@ function [primal_final, dual_final, solverInformation] = SQPSimpleLSDampedBFGS(f
         disp(alpha);
 
         % Then increase xk (solution to next multipliers is given directly from the above)
-        lk1 = dual.ineqlin;
+        lk1 = dual.ineqlin(1:m); % Only take the duals corresponding to the actual constraints supplied to the program
         p_lambda = lk1 - lk;
         xk = xk + alpha*pk;
         lk = lk + alpha*p_lambda;

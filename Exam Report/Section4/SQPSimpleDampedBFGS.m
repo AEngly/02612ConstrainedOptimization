@@ -53,7 +53,7 @@ function [primal_final, dual_final, solverInformation] = SQPSimpleDampedBFGS(fun
         fprintf("Starting iteration %d:\n\n", iter)
 
         % Start by constructing the problem for quadprog
-        C = GC;
+        C = GC';
         d = c;
 
         % Then construct H,f,A,b for quadprog
@@ -120,7 +120,7 @@ function [primal_final, dual_final, solverInformation] = SQPSimpleDampedBFGS(fun
         [f, fGrad] = fun(xk);
 
         % Check for convergence
-        if norm(fGrad + GC*lk1, 'Inf') < epsilon && norm(c, 'Inf') < epsilon
+        if norm(fGrad - GC*lk, 'Inf') < epsilon
             converged = true;
         end
 
