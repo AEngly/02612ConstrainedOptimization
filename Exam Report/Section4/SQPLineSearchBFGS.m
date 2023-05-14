@@ -1,21 +1,10 @@
-function [primal_final, dual_final, solverInformation] = SQP_LS_BFGS_Infeasiblility(fun,x0,xlb,xub,clb,cub,nonlcon,options)
+function [primal_final, dual_final, solverInformation] = SQPLineSearchBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options)
 
     % Auxiliary variables
     iter = 0;
     maxit = options.maxit;
-    BFGS = options.BFGS;
-    stepSolver = options.stepSolver;
-    lineSearch = options.lineSearch;
     converged = false;
-    rho = 0.9; % (has to be between 0 and 1)
-    muk = options.l1Penalty;
-    l1Penalty = options.l1Penalty;
-    mu_margin = 1;
     epsilon = options.convergenceRequirement;
-
-    % Variables for Line Search
-    tau = 0.9; % 
-    armijoC = 0.1;
 
     % Options for quadprog
     optionsQP = optimoptions('quadprog','Algorithm','interior-point-convex','Display','off');
@@ -35,7 +24,7 @@ function [primal_final, dual_final, solverInformation] = SQP_LS_BFGS_Infeasiblil
     % Initialize penalties for Powell exact merit
     eqPenalty = 0; % NOT IMPLEMENTED CURRENTLY
     ineqPenalty = lk+1;
-    slackPenalty = 2;
+    slackPenalty = options.infeasibilityPenalty;
 
     % Create a struct to store information
     solverInformation = struct();
@@ -64,10 +53,11 @@ function [primal_final, dual_final, solverInformation] = SQP_LS_BFGS_Infeasiblil
         % Then construct H,f,A,b for quadprog
         H = [Bk zeros(n,m); zeros(n,n) zeros(n,m)];
         f = [fGrad; slackPenalty*ones(m,1)];
-        A = [-C eye(m); zeros(m,m) -eye(m)];
+        A = [-C -eye(m); zeros(m,m) -eye(m)];
         b = [d; zeros(m,1)];
 
         % Quadprog
+        disp(H);
         [primal,fval,exitflag,output,dual] = quadprog(H,f,A,b,[],[],[],[],[],optionsQP);
 
         % Extract the right variables

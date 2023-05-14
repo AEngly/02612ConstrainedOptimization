@@ -1,3 +1,4 @@
+
 % ---------------- DESCRIPTION --------------
 %
 % Name: SQPTrustRegion
@@ -22,187 +23,132 @@
 
 % ---------------- IMPLEMENTATION --------------
 
-function [x_final, solverInformation] = SQPTrustRegion(fun,x0,lb,ub,clb,cub,nonlcon,options)
+function [primal_final, dual_final, solverInformation] = SQPTrustRegion(fun,x0,xlb,xub,clb,cub,nonlcon,options)
 
-    % Read option choices
-    maxIter = options.maxIter;
+    % Auxiliary variables
+    iter = 0;
+    maxit = options.maxit;
+    BFGS = options.BFGS;
+    stepSolver = options.stepSolver;
+    lineSearch = options.lineSearch;
     trustRegion = options.trustRegion;
-    epsilon = 10^(-options.precision);
-    eta = options.eta;
-    mu = options.l1Penalty;
+    converged = false;
+    muk = options.l1Penalty;
+    acceptanceMargin = options.acceptanceMargin;
+    epsilon = options.convergenceRequirement;
 
-    % Save information variables
-    k = 1;
+    % Variables for Line Search
+    tau = 0.9; % 
+    armijoC = 0.1;
 
-    % Compute relevant function values
+    % Options for quadprog
+    optionsQP = optimoptions('quadprog','Algorithm','interior-point-convex','Display','off');
+
+    % Compute necessary values in first step
+    [c,ceq,GC,GCeq] = nonlcon(x0);
+    [f, fGrad] = fun(x0);
+
+    % Save number of variables
+    n = length(x0);
+    m = length(c);
+
+    % Require starting condition
     xk = x0;
-    [f,df] = fun(xk);
-    [c,ceq,GC,GCeq] = nonlcon(xk);
+    lk = ones(m,1);
 
-    % Compute relevant dimension
-    n = length(xk);
-    miq = size(c,1);
-    meq = size(ceq,1);
+    % Initialize penalties for Powell exact merit
+    eqPenalty = 0; % NOT IMPLEMENTED CURRENTLY
+    ineqPenalty = lk;
+    slackPenalty = options.infeasibilityPenalty;
 
-    % Define initial dual variables as vector  of 0s
-    zk = zeros(6*n+4*miq+3*meq+2,1);
+    % Create a struct to store information
+    solverInformation = struct();
+    solverInformation.primalSequence = xk;
+    solverInformation.dualSequence = lk;
+    solverInformation.stepSequence = [];
+    solverInformation.stepLambdaSequence = [];
 
-    % Prepare matrix for damped BFGS
+    % Specify large number and small number to cope with missing bounds on
+    % constraints (only if partially specified)
+    mBIG = 10^6;
+    mSMALL = -10^6;
+
+    % Initialize positive definite matrix for damped BFGS
     Bk = eye(n);
 
-    % Define options for quadprog
-    %options = optimset('Display', 'off');
-    options = optimset();
+    % Compute steps until convergence test is satisfied
+    while ~converged && (iter < maxit)
 
-    % Define additonals
-    converged = false;
-    
-    % Start for loop
-    while ~converged && k <= maxIter
-        
-        % PART 1: Solve subproblem
-        % 1.1) Define matrices for objective
-        H = zeros(3*n + 2*meq + 2*miq+1, 3*n + 2*meq + 2*miq+1);
-        H(1:n,1:n) = Bk;
-        d = [df; mu*ones(2*meq,1);mu*ones(2*miq+2*n,1);0];
+        fprintf("Starting iteration %d:\n\n", iter)
 
-        % 1.2) Define matrices for equality constraints
-        Aeq = [GCeq' eye(meq) -eye(meq) zeros(meq,2*n + 2*miq)];
-        beq = ceq;
+        % Start by constructing the problem for quadprog
+        C = GC';
+        d = c;
 
-        % 1.3) Define matrices for inequality constraints
-        A = zeros(6*n+4*miq+2*meq+2, 3*n+2*meq+2*miq+1);
-        A(1:2*miq+4*n,1:n) = [-GC'; GC; -eye(n); eye(n); -eye(n); eye(n)];
-        A1 = blkdiag(eye(2*meq),eye(miq),eye(miq),eye(n),eye(n),[1;-1]);
-        A2 = blkdiag(eye(miq),eye(miq),eye(n),eye(n), [ones(n,1); -ones(n,1)]);
-        A(2*miq+4*n+1:end,n+1:end) = A1;
-        A(1:2*miq+4*n,n+2*meq+1:end) = A2;
+        % Then construct H,f,A,b for quadprog
+        H = [Bk zeros(n,m+1); zeros(m+1,n) zeros(m+1,m+1)];
+        f = [fGrad; slackPenalty*ones(m,1); zeros(1,1)];
+        A = [-C -eye(m) zeros(m,1); % Lower bound
+             eye(m) zeros(m,m) -ones(m,1); % Formalizing norm part 1
+             -eye(m) zeros(m,m) -ones(m,1); % Formalizing norm part 2
+             zeros(m,m) -eye(m) zeros(m,1); % Nonnegativity for all t's
+             zeros(1,2*m) ones(1,1)]; % Nonnegativity for s
+        b = [d; zeros(3*m,1); trustRegion];
 
-        b = zeros(6*n+4*miq+2*meq+2, 1);
-        b(1:2*miq+2*n,1) = [cub - c; c - clb; ub - xk; xk - lb];
-        b(1:2*miq+2*n,1) = [cub - c; c - clb; ub - xk; xk - lb];
-        b(end-1:end,1) = [trustRegion;0];
+        % Quadprog
+        [primal,fval,exitflag,output,dual] = quadprog(H,f,A,b,[],[],[],[],[],optionsQP);
 
-        % The system is now defined as
-        % Aeq + beq = 0
-        % A   + b  >= 0
-        % In quadprog, the notation is as follows:
-        % Aeq = beq
-        % A   => b
-
-        % 1.4) Solve system
-        [primal,~,~,~,dual] = quadprog(H,d,-A,b,Aeq,-beq,[],[],[],options);
-        
-        % 1.5) Separate primal variables
+        % Extract primal variables
         pk = primal(1:n);
-        disp(pk);
-        w = primal(n+1:n+meq);
-        v = primal(n+meq+1:n+meq*2);
-        t = primal(n+meq*2+1:end-1);
+        t = primal(n+1:end-1);
         s = primal(end);
 
-        % PART 2: Update penalty parameter (Powell update -> slides 9A page 22)
-        lambdaHat = dual.ineqlin(1:2*n+2*miq);
-        lambdaNorm = vecnorm(lambdaHat,'Inf');
-        mu = max(1/2*(mu+lambdaNorm),lambdaNorm);
-        
-        % PART 3: Accept or reject step, then update trust region
-        % Compute constraint and append to get right form
-        [c,ceq,GC,GCeq] = nonlcon(xk);
-        cFull = zeros(2*n+2*miq, 1);
-        cFull(1:2*miq+2*n,1) = [cub - c; c - clb; ub - xk; xk - lb];
-        ceqFull = zeros(meq, 1);
-        ceqFull(1:meq,1) = ceq;  
-        GCFull = [-GC GC -eye(n) eye(n)];
-        GCeqFull = GCeq;
-        
-        % Repeat where we "take" step
-        [c,ceq,GC,GCeq] = nonlcon(xk+pk);
-        cFullp = zeros(2*n+2*miq, 1);
-        cFullp(1:2*miq+2*n,1) = [cub - c; c - clb; ub - (xk+pk); (xk+pk) - lb];
-        ceqFullp = zeros(meq, 1);
-        ceqFullp(1:meq,1) = ceq;   
-        GCFullp = [-GC GC -eye(n) eye(n)];
-        GCeqFullp = GCeq;
-
-        % Compute objective of l1 form (q(pk))
-        qP1 = df'*pk;
-        qP2 = 1/2*pk'*Bk*pk;
-        if ~isempty(GCeqFull)
-            qP3 = sum(mu*abs(ceqFull+GCeqFull'*pk));
-        else
-            qP3 = 0;
+        % Check if it succeded
+        if ~(exitflag == 1)
+            fprintf("Step could not be computed!");
         end
-        if ~isempty(GCFull)
-            qP4 = sum(mu*max(0,-(cFull+GCFull'*pk)));
-        else
-            qP4 = 0;
-        end
-        qP = f+qP1+qP2+qP3+qP4;
 
-        % Compute objective of l1 form (q(0))
-        q01 = sum(mu*abs(ceqFull));
-        q02 = sum(mu*max(0,-cFull));
-        q0 = f+q01+q02;
-
-        % Compute objective of l1 form (phi1(0) and phi1(pk))
-        phi1 = q0;
-        phi1P = fun(xk + pk) + sum(mu*abs(ceqFull)) + sum(mu*max(0,-cFullp));
+        % Update penalty parameter muk (follow algorithm 18.5)
+        % This part is not implemented yet.
         
-        % The we can compute the acceptance ratio
-        rho = (phi1-phi1P)/(q0-qP);
+        % Determine whether to accept the step
+        ared_k = phi_1(xk,muk,fun,nonlcon) - phi_1(xk+pk,muk,fun,nonlcon);
+        pred_k = phi_1(xk,muk,fun,nonlcon) - q_mu(xk,pk,Bk,muk,fun,nonlcon);
+        rho_k = ared_k/pred_k;
 
-        % If trust region is accepted
-        if rho>eta
+        % Compute scalar to change trust region
+        gamma = min(max((2*rho_k-1)^3+1,0.25),2);
 
-            % Update trust region
-            gamma = min(max((2*rho-1)^3+1,0.25),2);
+        if rho_k > acceptanceMargin
+
+            % Update step
+            xk = xk + pk;
+            lk1 = dual.ineqlin(1:m);
+            p_lambda = lk1 - lk;
+            lk = lk + p_lambda;
+
+             % Update trust region
             trustRegion = gamma*trustRegion;
 
-            % Compute update of Bk
-            [~,dfP] = fun(xk + pk);
-            if ~isempty(GCeqFullp')
-                LGradP1 = GCeqFullp*dual.eqlin;
-            else
-                LGradP1 = 0;
-            end
-            if ~isempty(GCFullp)
-                LGradP2 = GCFullp*dual.ineqlin(1:2*n+2*miq);
-            else
-                LGradP2 = 0;
-            end
-            if ~isempty(GCeqFull)
-                LGrad1 = GCeqFull*dual.eqlin;
-            else
-                LGrad1 = 0;
-            end
-            if ~isempty(GCFull)
-                LGrad2 = GCFull*dual.ineqlin(1:2*n+2*miq);
-            else
-                LGrad2 = 0;
-            end
-
-            LGradP = dfP - LGradP1 - LGradP2;
-            LGrad = df - LGrad1 - LGrad2;
-
-            % Update the current iterate
-            zk = lambdaHat;
-            xk = xk + pk;
-
-            % Update values for next iteration
-            [f,df] = fun(xk);
-            [c,~] = nonlcon(xk);
-
-            % Then get qk
-            qk = LGradP - LGrad;
+            % Update Hessian with damped BFGS
+            % In order to compute the lagrangian, we need original xk and new
+            % iterate
+            [c_step,ceq_step,GC_step,GCeq_step] = nonlcon(xk);
+            [fStep, fStepGrad] = fun(xk);
+    
+            % Then we construct the appropriate row vector
+            LGrad = fGrad - GC*lk;           
+            LGrad1 = fStepGrad - GC_step*lk;
             
+            % Then get pk and qk
+            pk = pk;
+            qk = LGrad1 - LGrad;
+    
             % Then be can use the modified BFGS procedure
             if pk'*qk >= 0.2*pk'*Bk*pk
                 theta = 1;
             else
-                denom = 0.8*pk'*Bk*pk;
-                nom = pk'*Bk*pk - pk'*qk;
-                theta = denom/nom;
+                theta = (0.8*pk'*Bk*pk)/(pk'*Bk*pk - pk'*qk);
             end
     
             % Then we can find rk
@@ -210,23 +156,57 @@ function [x_final, solverInformation] = SQPTrustRegion(fun,x0,lb,ub,clb,cub,nonl
     
             % Then we can update the matrix
             Bk = Bk + (rk*rk')/(pk'*rk) - ((Bk*pk)*(Bk*pk)')/(pk'*Bk*pk);
-        
-        % If the trust region is not accepted
+
         else
-            % Update the trust region
-            trustRegion = gamma * vecnorm(pk,'Inf');
+
+            % Keep the same step
+            xk = xk;
+            p_lambda = lk - lk;
+            lk = lk + p_lambda;
+
+            % Update trust region
+            trustRegion = gamma*vecnorm(pk,'Inf');
+
+            % Store step
+            pk = zeros(n,1);
+
         end
 
-        % PART 4: Finish iteration by checking for convergence
-        fprintf("Finished iteration: %d", k);
-        k = k + 1;
-        
-        if norm(pk,2) < epsilon
+        % Store information from iteration
+        solverInformation.primalSequence = [solverInformation.primalSequence xk];
+        solverInformation.dualSequence = [solverInformation.dualSequence lk];
+        solverInformation.stepLambdaSequence = [solverInformation.stepLambdaSequence p_lambda];
+        solverInformation.stepSequence = [solverInformation.stepSequence pk];
+
+        % Recompute function values
+        [c,ceq,GC,GCeq] = nonlcon(xk);
+        [f, fGrad] = fun(xk);
+
+        % Check for convergence
+        if norm(fGrad - GC*lk, 'Inf') < epsilon
             converged = true;
-            x_final = xk;
-            solverInformation = struct();
         end
 
-   end
+        iter = iter + 1;
 
+    end
+
+    primal_final = xk;
+    dual_final = lk(1:n);
+
+end
+
+function [val] = phi_1(xk,mu,fun,nonlcon)
+    [ck,ceqk,GCk,GCeqk] = nonlcon(xk);
+    eqTerm = abs(0);
+    ineqTerm = max(0,-ck);
+    val = fun(xk) + mu*sum(eqTerm) + mu*sum(ineqTerm);
+end
+
+function [val] = q_mu(xk,pk,Bk,mu,fun,nonlcon)
+    [fk, fGradk] = fun(xk);
+    [ck,ceqk,GCk,GCeqk] = nonlcon(xk);
+    ineqTerm = max(0,-(ck + GCk'*pk));
+    eqTerm = abs(0);
+    val = fk + fGradk'*pk + 0.5*pk'*Bk*pk + mu*sum(eqTerm) + mu*sum(ineqTerm);
 end
