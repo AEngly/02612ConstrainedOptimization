@@ -1,4 +1,4 @@
-function [x, k, x_k] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter,varargin)
+function [x0,ma] = QP_PrimalActiveSet_PAS_initial_point(H, g, A, b, C, dl, du, l, u, maxiter,varargin)
 % ---------------- DESCRIPTION --------------
 %
 % Name: QP_PrimalActiveSet_linprog   
@@ -35,7 +35,7 @@ end
 
 % ---------------- Settings --------------
 
-num_tol = 1e-9;
+num_tol = 1e-8;
 bn = 1e9;
 
 % ---------------- Setup for initial point --------------
@@ -104,13 +104,6 @@ gi = [ zeros(n,1); ones(2*mb+mdl+mdu+ml+mu,1)];
 
 % ---------------- Find initial point --------------
 [x0, k] = QP_primalActiveSet_core(Hi, gi, Abar, bbar, x0, ma, maxiter, num_tol);
-
-% ---------------- Setup for solution --------------
-Abar = [A C -C eye(length(l)) -eye(length(u))];
-bbar = [-b; dl; -du; l; -u];
 x0 = x0(1:n);
-% ---------------- Find solution --------------
-[x, k, x_k]= QP_primalActiveSet_core(H, g, Abar, bbar, x0, ma, maxiter, num_tol,args);
-
 
 end

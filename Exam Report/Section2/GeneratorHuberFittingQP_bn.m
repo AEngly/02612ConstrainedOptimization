@@ -1,4 +1,4 @@
-function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density)
+function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density,bn)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -21,8 +21,9 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density)
 %
 % ---------------- IMPLEMENTATION --------------
     
-    bn = 1e15;
+    bn = 1e3;
     m = round(beta*n);
+    sn = 1e-9;
 
     Ax = zeros(n,m);
     while n ~= rank(Ax)
@@ -47,15 +48,15 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density)
     du = zeros(0,1);
 
     % lower limit for x and u set to a small enough number.
-    l = [-inf*ones(n,1); -inf*ones(m,1); zeros(m,1); zeros(m,1);];
+    l = [-bn*ones(n,1); -bn*ones(m,1); zeros(m,1); zeros(m,1);];
     u = zeros(n+3*m,0);
     
-    e = 1e-8;
+
     H = zeros(n+3*m,n+3*m);
-    %H(1:n,1:n) = e*eye(n);
+    H(1:n,1:n) = sn*eye(n);
     H(n+1:n+m,n+1:n+m) = eye(m);
-    %H(n+m+1:n+2*m,n+m+1:n+2*m) = e*eye(m);
-    %H(n+2*m+1:n+3*m,n+2*m+1:n+3*m) = e*eye(m);
+    H(n+m+1:n+2*m,n+m+1:n+2*m) = sn*eye(m);
+    H(n+2*m+1:n+3*m,n+2*m+1:n+3*m) = sn*eye(m);
     
 
     g = [zeros(n,1); zeros(m,1); ones(m,1)*2; ones(m,1)*2];

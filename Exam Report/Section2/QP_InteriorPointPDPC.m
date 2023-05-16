@@ -1,4 +1,4 @@
-function [x,y,z,s,info,iter] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,itermax)
+function [x,k,x_k,y,z,s,info] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter,x0, varargin)
 % ---------------- DESCRIPTION --------------
 %
 % Name: QP_ineq_box_InteriorPointPDPC   
@@ -23,7 +23,27 @@ function [x,y,z,s,info,iter] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,itermax)
 
 % ---------------- IMPLEMENTATION --------------
 
-% Setup tolerances
+
+% ---------------- Check input arguments --------------
+
+n = length(g);
+
+args = [];
+
+if exist('verbose','var')
+  verbose=true;
+  args = [args, 'verbose'];
+end
+
+if exist('x_k','var')
+    all = true;
+    x_k = zeros(n, maxiter);
+else
+    x_k = [];
+    all = false;
+end
+
+% ---------------- Setup tolerances --------------
 tol_L = 1e-8;
 tol_C = 1e-8;
 tol_A = 1e-8;
@@ -32,7 +52,6 @@ tol_mu = 1e-8;
 % ---------------- Find starting point --------------
 
 %Check problem size
-n = length(g);
 m = length(b);
 % Set initial guesses for X0, y0, s0 and z0
 
@@ -76,7 +95,6 @@ s = max(ones(length(s0),1),abs(s0+deltasaff));
 % ---------------- iterate --------------
 
 
-
 % Calculate residuals
 rL = H*x+g-A*y-Cbar*z;
 rA = -b-A'*x;
@@ -91,14 +109,14 @@ mu = z'*s/mc;
 
 % Setup loop
 k=0;
-terminate = (k > itermax | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
+terminate = (k > maxiter | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
 
 % preallocation
 %deltaxyaff = zeros(n+m,1);
 
 while ~terminate
     k= k+1;
-    disp(k);
+    %disp(k);
     % Compute LDL factorization of modified KKT system
     Czs = Cbar*diag(z./s);
     Hbar = H + Czs*Cbar';
@@ -148,6 +166,9 @@ while ~terminate
     z = z + alphabar*deltaz;
     s = s + alphabar*deltas;
     
+    if all
+        x_k(:,k) = x;
+    end
     %calculate residuals
     rL = H*x+g-A*y-Cbar*z;
     rA = -b-A'*x;
@@ -155,10 +176,10 @@ while ~terminate
     rsz = (s.*z);
     mu = z'*s/mc;
     
-    disp(x(1:2));
+    %disp(x(1:2));
     % Check convergence
-    terminate = (k >= itermax | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
+    terminate = (k >= maxiter | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C & abs(mu)<=tol_mu );
 end
-iter = k;
-info = k <= itermax;
+
+info = k <= maxiter;
 end

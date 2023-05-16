@@ -18,50 +18,61 @@
 % ---------------- IMPLEMENTATION --------------
 
 
+%% 2.5a linprog
 %% Test problems
 
 % Initial test problem
 
 maxiter = 100;
 
-[H,g,A,b,C,dl,du,l,u] = MinimalQP()
+[H,g,A,b,C,dl,du,l,u] = MinimalQP();
 
-[xas] = test_new(H, g, A, b, C, dl, du, l, u, maxiter);
+[x] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
 
 xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
-
-%% RandomQP settings from OSQP paper
-
+norm(x-xstar)
 
 
 %% 2.5 test Primal-active set
 alpha = 0.01;
 beta = 2; % setting from OSQP paper
 density = 0.15; % 15% must be non-zero
-n = 2;
-maxiter=10000;
+n = 100;
+maxiter=1000;
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
-[all_xk] = test_new(H, g, A, b, C, dl, du, l, u, maxiter);
+[all_xk] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
 
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
 x = all_xk(:,end);
 norm(x-xstarx)
 
-%% test huber fitting
-n=2;
-beta = 50;
-maxiter=1000;
-density = 0.15;
+%%
+alpha = 0.01;
+density = 0.15; % 15% must be non-zero
+n = 100;
+maxiter=100;
+[H,g,A,b,C,dl,du,l,u] = GeneratorQPRandom(n,alpha,density);
 
-[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density);
-
-[all_xk]  = test(H, g, A, b, C, dl, du, l, u,maxiter);
+[all_xk] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
 
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
 x = all_xk(:,end);
+norm(x-xstarx)
+%% test huber fitting
+n=20;
+beta = 4;
+maxiter=1000;
+density = 0.15;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
+
+[x, k, x_k]  = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u,maxiter,'verbose', 'x_k');
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
 norm(x-xstarx)
 %% test portfolio
 
@@ -73,6 +84,77 @@ maxiter=100;
 [H,g,A,b,C,dl,du,l,u] = GeneratorPortfolioOptimizationQP(k,gamma,density);
 
 [x] = test(H,g,A,b,C,dl,du,l,u,maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
+%% 2.5a PrimalActiveSet for starting point
+%% Test problems
+
+% Initial test problem
+
+maxiter = 100;
+
+[H,g,A,b,C,dl,du,l,u] = MinimalQP();
+
+[x] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+norm(x-xstar)
+
+
+%% 2.5 test Primal-active set
+alpha = 0.01;
+beta = 2; % setting from OSQP paper
+density = 0.15; % 15% must be non-zero
+n = 100;
+maxiter=1000;
+[H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
+
+[all_xk] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+x = all_xk(:,end);
+norm(x-xstarx)
+
+%%
+alpha = 0.01;
+beta = 4;
+density = 0.15; % 15% must be non-zero
+n = 100;
+maxiter=1000;
+[H,g,A,b,C,dl,du,l,u] = GeneratorBoxQP(n,alpha,beta,density);
+
+[all_xk] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+x = all_xk(:,end);
+norm(x-xstarx)
+%% test huber fitting
+n=30;
+beta = 4;
+maxiter=1000;
+density = 0.15;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
+
+[x, k, x_k]  = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u,maxiter,'verbose', 'x_k');
+
+xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
+
+norm(x-xstarx)
+%% test portfolio
+
+k = 10;
+gamma = 1;
+density = 0.50;
+maxiter=100;
+
+[H,g,A,b,C,dl,du,l,u] = GeneratorPortfolioOptimizationQP(k,gamma,density);
+
+[x] = QP_PrimalActiveSet_PAS(H,g,A,b,C,dl,du,l,u,maxiter);
 
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
@@ -94,7 +176,9 @@ du = [2; -2];
 l = zeros(2,1);
 u = zeros(2,0);
 
-[xas] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
+x0 = [0;0];
+
+[xas] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter, x0);
 
 xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
@@ -135,7 +219,7 @@ beta = 10;
 maxiter=1000;
 density = 0.15;
 
-[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_inf(n,beta,density);
 [x,y,z,s] = QP_InteriorPointPDPC(H,g,A,b,C,dl,du,l,u,maxiter);
 
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);

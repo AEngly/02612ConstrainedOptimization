@@ -46,7 +46,7 @@ end
 
 xk = x0;
 At = A';
-w = At*xk - b == 0;
+w = abs(At*xk - b) < num_tol;
 
 %  ---------------- Loop setup --------------
 % 

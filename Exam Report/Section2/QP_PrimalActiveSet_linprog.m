@@ -38,7 +38,7 @@ if ~exist('x_k','var')
 end
 
 % % ---------------- Settings --------------
-num_tol = 1e-9;
+num_tol = 1e-8;
 bn = 1e9;
 
 % ---------------- Initial point --------------
@@ -49,46 +49,50 @@ mdu = length(du);
 ml = length(l);
 mu = length(u);
 
-gi = [zeros(n,1); ones(2*mb,1); ones(mdl,1); ones(mdu,1)];
-bi = [-b];
-di = [ -dl; du;];
-Ai = [A; eye(mb,mb); -eye(mb,mb); zeros(mdl,mb); zeros(mdu,mb) ];
+gbar = [zeros(n,1); ones(2*mb+mdl+mdu+ml+mu,1)];
+bbar = [-b];
+
+Abar = [A; eye(mb,mb); -eye(mb,mb); zeros(mdl+mdu+ml+mu,mb)];
 
 if mdl > 0
-    C1 = [-C; zeros(2*mb,mdl); -eye(mdl,mdl); zeros(mdu,mdl) ];
+    C1 = [C; zeros(2*mb,mdl); eye(mdl,mdl); zeros(mdu+ml+mu,mdl)];
 else
-    C1 = zeros(n+mb*2+mdl+mdu,0);
+    C1 = zeros(n+mb*2+mdl+mdu+ml+mu,0);
 end
 if mdu > 0
-    C2 = [C; zeros(2*mb,mdu); zeros(mdl,mdu); -eye(mdu,mdu) ];
+    C2 = [-C; zeros(2*mb,mdu); zeros(mdl,mdu); -eye(mdu,mdu); zeros(ml+mu,mdl)];
 else
-    C2 = zeros(n+mb*2+mdl+mdu,0);
+    C2 = zeros(n+mb*2+mdl+mdu+ml+mu,0);
 end
 
-Ci = [C1 C2];
 
 if ml == 0
-    lb = [-bn*ones(n,1); zeros(2*mb,1); zeros(mdl,1); zeros(mdu,1)];
+    ly = [-bn*ones(n,1); zeros(2*mb+mdl+mdu+ml+mu,1)];
 else
-    lb = [l; zeros(2*mb,1); zeros(mdl,1); zeros(mdu,1);];
+    ly = [l; zeros(2*mb+mdl+mdu+ml+mu,1)];
 end
+
+C3 = [eye(n) zeros(n,2*mb+mdl+mdu+ml+mu); [zeros(2*mb+mdl+mdu,n); eye(ml,n); zeros(mu,n)] eye(2*mb+mdl+mdu+ml+mu)];
 
 if mu == 0
-    ub = zeros(n+mb*2+mdl+mdu,0);
+    C4 = zeros(n,0);
 else
-    ub = [u; bn*ones(2*mb,1); bn*ones(mdl,1); bn*ones(mdu,1);];
+    C4 = [-eye(mu); zeros(mdl+mdu+ml,mu); eye(mu)];
 end
 
-x0 = linprog(gi',Ci',di,Ai',bi,lb,ub);
+dbar = [ dl; -du; ly; -u];
+
+Cbar = [C1 C2 C3 C4];
+x0 = linprog(gbar',-Cbar',-dbar,Abar',bbar);
 
 % ---------------- optimal point --------------
 [n,ma] = size(A);
 
-A = [A C -C eye(length(l)) -eye(length(u))];
-b = [-b; dl; -du; l; -u];
+Abar = [A C -C eye(length(l)) -eye(length(u))];
+bbar = [-b; dl; -du; l; -u];
 
 x0 = x0(1:n);
 
-[x, k, x_k] = QP_primalActiveSet_core(H, g, A, b, x0, ma, maxiter, num_tol,args);
+[x, k, x_k] = QP_primalActiveSet_core(H, g, Abar, bbar, x0, ma, maxiter, num_tol,args);
 
 end

@@ -1,4 +1,4 @@
-function [H,g,A,b,C,dl,du,l,u] = GeneratorQPRandom(n,alpha,density)
+function [H,g,A,b,C,dl,du,l,u] = GeneratorBoxQP(n,alpha,beta,density)
 % RandomQP Generates data for a random convex QP
 %
 %
@@ -7,7 +7,7 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorQPRandom(n,alpha,density)
 %   s.t. bl <= A  x <= bu
 %       l <= x <= u
 %
-% Syntax: [H,g,bl,A,bu,l,u] = RandomQP(n,alpha,density)
+% Syntax: [H,g,bl,A,bu,l,u] = GeneratorQPRandom(n,alpha,density)
 %
 % Inputs:
 % n number of variabels
@@ -16,7 +16,7 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorQPRandom(n,alpha,density)
 %
 % Outputs: QP data
 
-    m = 10*n;
+    m = beta*n;
     b = zeros(0,1);
     A = zeros(n,0);
     C = sprandn(n,m,density);
