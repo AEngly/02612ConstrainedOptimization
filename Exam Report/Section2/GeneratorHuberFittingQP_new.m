@@ -1,4 +1,4 @@
-function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density)
+function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -47,7 +47,7 @@ function [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density)
     du = zeros(0,1);
 
     % lower limit for x and u set to a small enough number.
-    l = [-bn*ones(n,1); -bn*ones(m,1); zeros(m,1); zeros(m,1);];
+    l = [-inf*ones(n,1); -inf*ones(m,1); zeros(m,1); zeros(m,1);];
     u = zeros(n+3*m,0);
     
     e = 1e-8;

@@ -23,21 +23,12 @@
 % Initial test problem
 
 maxiter = 100;
-H = eye(2);
-g = [-2;-5];
-A = [1;-1];
-b = zeros(1,1);
-C = [ 1 -1; -2 -2];
-dl = [-2; -6];
-du = [2; -2];
-l = zeros(2,1);
-u = zeros(2,0);
 
-[xas] = test(H, g, A, b, C, dl, du, l, u, maxiter);
+[H,g,A,b,C,dl,du,l,u] = MinimalQP()
+
+[xas] = test_new(H, g, A, b, C, dl, du, l, u, maxiter);
 
 xstar = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
-
-norm(xas-xstar)
 
 %% RandomQP settings from OSQP paper
 
@@ -51,7 +42,7 @@ n = 2;
 maxiter=10000;
 [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
 
-[all_xk] = test(H, g, A, b, C, dl, du, l, u, maxiter);
+[all_xk] = test_new(H, g, A, b, C, dl, du, l, u, maxiter);
 
 xstarx = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u);
 
@@ -59,12 +50,12 @@ x = all_xk(:,end);
 norm(x-xstarx)
 
 %% test huber fitting
-n=5;
-beta = 100;
+n=2;
+beta = 50;
 maxiter=1000;
 density = 0.15;
 
-[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);
+[H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_new(n,beta,density);
 
 [all_xk]  = test(H, g, A, b, C, dl, du, l, u,maxiter);
 
@@ -141,7 +132,7 @@ norm(x-xstarx)
 %% test huber fitting
 n=2;
 beta = 10;
-maxiter=100;
+maxiter=1000;
 density = 0.15;
 
 [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP(n,beta,density);

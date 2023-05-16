@@ -1,4 +1,4 @@
-function [H,g,A,b,C,dl,du,l,u] = RandomQP_(n,alpha,density)
+function [H,g,A,b,C,dl,du,l,u] = GeneratorQPRandom(n,alpha,density)
 % RandomQP Generates data for a random convex QP
 %
 %
