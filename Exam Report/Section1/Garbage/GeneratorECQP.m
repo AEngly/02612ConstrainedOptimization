@@ -1,4 +1,4 @@
-function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
+function [H,g,A,b] = GeneratorECQP(n,alpha,beta,density)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -7,7 +7,7 @@ function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
 %
 % Problem structure:
 %           min     0.5 x' H x + g' x
-%            x input \
+%            x
 %           s.t.    A'x + b = 0
 %
 % Syntax: [x, lambda] = EqualityQPSolverRS(H, g, A, b)
@@ -21,16 +21,15 @@ function [H,g,A,b,x,lambda] = updated_GeneratorECQP(n,alpha,beta,density)
 
     m = round(beta*n);
     A = sprandn(n,m,density);
-    A = full(A);
     M = sprandn(n,n,density);
     H = M*M' + alpha*eye(n,n);
 
     x = randn(n,1);
     lambda = randn(m,1);
 
-    y = [H -A; -A' zeros(m,m)]*[x;lambda];
+    y = [H -A; -A' zeros(m,m)]*[x;lambda]
 
     g = -y(1:n);
-    b = y(n+1:n+m);
+    b = -y(n+1:n+m);
 
 end

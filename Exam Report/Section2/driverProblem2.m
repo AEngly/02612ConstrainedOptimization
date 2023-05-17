@@ -129,21 +129,21 @@ j = 1;
 
 for n = problem_sizes
     [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,1)] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,1) = toc;
     residual(j,1) = norm(x-xstar);
 
     [H,g,A,b,C,dl,du,l,u] = GeneratorBoxQP(n,alpha,beta, density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,2)] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,2) = toc;
     residual(j,2) = norm(x-xstar);
     
     [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,3)] = QP_PrimalActiveSet_linprog(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,3) = toc;
@@ -156,9 +156,9 @@ end
 figure,
 hold on
 
-scatter(problem_sizes,residual(:,1), '.');
-scatter(problem_sizes,residual(:,2), 'o');
-scatter(problem_sizes,residual(:,3), 'x');
+scatter(problem_sizes,residual(:,1),200, '.','LineWidth',2);
+scatter(problem_sizes,residual(:,2), 'o','LineWidth',2);
+scatter(problem_sizes,residual(:,3), 'x','LineWidth',2);
 %scatter(problem_sizes,residual(:,4), '+');
 %scatter(problem_sizes,residual(:,5), '*');
 %scatter(problem_sizes,residual(:,6), 's');
@@ -268,21 +268,21 @@ j = 1;
 
 for n = problem_sizes
     [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,1)] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,1) = toc;
     residual(j,1) = norm(x-xstar);
 
     [H,g,A,b,C,dl,du,l,u] = GeneratorBoxQP(n,alpha,beta, density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,2)] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,2) = toc;
     residual(j,2) = norm(x-xstar);
     
     [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,3)] = QP_PrimalActiveSet_PAS(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,3) = toc;
@@ -295,9 +295,9 @@ end
 figure,
 hold on
 
-scatter(problem_sizes,residual(:,1), '.');
-scatter(problem_sizes,residual(:,2), 'o');
-scatter(problem_sizes,residual(:,3), 'x');
+scatter(problem_sizes,residual(:,1),200, '.','LineWidth',2);
+scatter(problem_sizes,residual(:,2), 'o','LineWidth',2);
+scatter(problem_sizes,residual(:,3), 'x','LineWidth',2);
 %scatter(problem_sizes,residual(:,4), '+');
 %scatter(problem_sizes,residual(:,5), '*');
 %scatter(problem_sizes,residual(:,6), 's');
@@ -433,9 +433,9 @@ end
 figure,
 hold on
 
-scatter(problem_sizes,residual(:,1), '.');
-scatter(problem_sizes,residual(:,2), 'o');
-scatter(problem_sizes,residual(:,3), 'x');
+scatter(problem_sizes,residual(:,1),200, '.','LineWidth',2);
+scatter(problem_sizes,residual(:,2), 'o','LineWidth',2);
+scatter(problem_sizes,residual(:,3), 'x','LineWidth',2);
 %scatter(problem_sizes,residual(:,4), '+');
 %scatter(problem_sizes,residual(:,5), '*');
 %scatter(problem_sizes,residual(:,6), 's');

@@ -1,4 +1,4 @@
-function [H,g,A,b,x,lambda] = GeneratorECQP(n,alpha,beta,density)
+function [H,g,A,b,x,lambda] = GeneratorDenseECQP(n,beta,density)
 
 % ---------------- DESCRIPTION --------------
 %
@@ -13,7 +13,7 @@ function [H,g,A,b,x,lambda] = GeneratorECQP(n,alpha,beta,density)
 % Syntax: [x, lambda] = EqualityQPSolverRS(H, g, A, b)
 %
 %
-% Created: 30.03.2023
+% Created: 17.05.2023
 % Authors: Andreas Engly (s170303) and Karl Takeuchi-Storm (s130377)
 %          Compute, Technical University of Denmark
 %
@@ -22,9 +22,11 @@ function [H,g,A,b,x,lambda] = GeneratorECQP(n,alpha,beta,density)
     m = round(beta*n);
     A = sprandn(n,m,density);
     A = full(A);
-    M = sprandn(n,n,density);
-    H = M*M' + alpha*eye(n,n);
-
+    H = sprandsym(n,density);
+    Ii = eye(n);
+    while ~all(eig(H) > 0)
+        H = H + Ii;
+    end
     x = randn(n,1);
     lambda = randn(m,1);
 
