@@ -406,21 +406,21 @@ j = 1;
 
 for n = problem_sizes
     [H,g,A,b,C,dl,du,l,u] = GeneratorQP(n,alpha,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,1)] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,1) = toc;
     residual(j,1) = norm(x-xstar);
 
     [H,g,A,b,C,dl,du,l,u] = GeneratorBoxQP(n,alpha,beta, density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,2)] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,2) = toc;
     residual(j,2) = norm(x-xstar);
     
     [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
-    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_as);
+    x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,3)] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,3) = toc;
@@ -449,7 +449,7 @@ ylabel("residual")
 
 hold off
 
-saveas(gcf,'./Plots/271_Numerical_performance_QP_PrimalActiveSet_linprog.png')
+saveas(gcf,'./Plots/272_Numerical_performance_QP_PrimalActiveSet_linprog.png')
 
 CPU_T = table(problem_sizes',cpu_t(:,1),cpu_t(:,2),cpu_t(:,3),'VariableNames',['n',Variable_names]);
 table2latex(CPU_T, './271cpuTime.tex')
