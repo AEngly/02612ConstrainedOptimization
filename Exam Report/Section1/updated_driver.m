@@ -53,15 +53,17 @@ end
 
 
 %% plot numerical performance
+
+
 figure,
 hold on
 
-scatter(problem_sizes,residual(:,1), '.');
-scatter(problem_sizes,residual(:,2), 'o');
-scatter(problem_sizes,residual(:,3), 'x');
-scatter(problem_sizes,residual(:,4), '+');
-scatter(problem_sizes,residual(:,5), '*');
-scatter(problem_sizes,residual(:,6), 's');
+scatter(problem_sizes,residual(:,1),200, '.','LineWidth',2);
+scatter(problem_sizes,residual(:,2), 'o','LineWidth',2);
+scatter(problem_sizes,residual(:,3), 'x','LineWidth',2);
+scatter(problem_sizes,residual(:,4), '+','LineWidth',2);
+scatter(problem_sizes,residual(:,5), '*','LineWidth',2);
+scatter(problem_sizes,residual(:,6), 's','LineWidth',2);
 
 set(gca,'yscale','log')
 legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','southeast')
@@ -72,7 +74,7 @@ title("\beta = 0.5")
 
 hold off
 
-saveas(gcf,'./Plots/Numerical_performance_Solvers_beta_0_5.png')
+saveas(gcf,'./Plots/1511_Numerical_performance_Solvers_beta_0_5.png')
 
 %%
 
@@ -130,6 +132,7 @@ for i=1:6
     title(titles(i))
 end
 
+saveas(gcf,'./Plots/1512_Numerical_issues.png')
 
 %% Benchmarking solvers
 alpha = 0.15;
@@ -153,7 +156,7 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg1(i,:));
+        plot(problem_sizes, TTC_avg1(i,:), 'LineWidth', 3);
     end
     
     %set(gca,'yscale','log')
@@ -165,7 +168,7 @@ hold on
 
 hold off
 
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_05.png')
+saveas(gcf,'./Plots/1521_ComparisonSolvers_beta_0_05.png')
 
 
 % beta 0.2
@@ -178,7 +181,7 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg2(i,:));
+        plot(problem_sizes, TTC_avg2(i,:), 'LineWidth', 3);
     end
     
     %set(gca,'yscale','log')
@@ -190,7 +193,7 @@ hold on
 
 hold off
 
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_2.png')
+saveas(gcf,'./Plots/1522_ComparisonSolvers_beta_0_2.png')
 % beta 0.5
 
 beta = 0.5;
@@ -201,7 +204,7 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg3(i,:));
+        plot(problem_sizes, TTC_avg3(i,:), 'LineWidth', 3);
     end
     
     %set(gca,'yscale','log')
@@ -213,7 +216,7 @@ hold on
 
 hold off
 
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_5.png')
+saveas(gcf,'./Plots/1523_ComparisonSolvers_beta_0_5.png')
 % beta 0.8
 
 beta = 0.8;
@@ -224,7 +227,7 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg4(i,:));
+        plot(problem_sizes, TTC_avg4(i,:), 'LineWidth', 3);
     end
     
     %set(gca,'yscale','log')
@@ -236,7 +239,7 @@ hold on
 
 hold off
 
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_8.png')
+saveas(gcf,'./Plots/1524_ComparisonSolvers_beta_0_8.png')
 % beta 0.95
 beta = 0.95;
 
@@ -246,7 +249,7 @@ figure,
 hold on
 
     for i=1:6
-        plot(problem_sizes, TTC_avg5(i,:));
+        plot(problem_sizes, TTC_avg5(i,:), 'LineWidth', 3);
     end
     
     %set(gca,'yscale','log')
@@ -257,7 +260,7 @@ hold on
 
 hold off
 
-saveas(gcf,'./Plots/ComparisonSolvers_beta_0_95.png')
+saveas(gcf,'./Plots/1525_ComparisonSolvers_beta_0_95.png')
 
 %% data gathering loop
 

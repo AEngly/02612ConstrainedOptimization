@@ -2,12 +2,15 @@
 	- Optimal control problem generator
 	- Portfolio optimization problem generator
 	- Support vector machine random problem generator
+    - If implemented add to 2.5 and 2.7
 2.5 
     - Could make sense to add another path plot
-    - Add more test problems
+
     - optionally remove linprog implementation, and increase big number in huber fitting
 2.7
     - Could make sense to add another path plot
+2.8
+    - Interior point methods could be provided with starting points.
 
 
 
