@@ -1,4 +1,4 @@
-function [x,info,mu,lambda,iter] = LPippd(g,Aeq,beq,A,cub,clb,lb,ub,options)
+function [x,info,mu,lambda,iter] = LP_InteriorPointPrimalDual(g,A,b,x,options)
 % LPIPPD   Primal-Dual Interior-Point LP Solver
 %
 %          min  g'*x
@@ -18,6 +18,7 @@ function [x,info,mu,lambda,iter] = LPippd(g,Aeq,beq,A,cub,clb,lb,ub,options)
 %%
 
 % We start by constructing the matrix
+
 
 
 [m,n]=size(A);
@@ -52,7 +53,6 @@ while ~Converged && (iter<maxit)
     % ====================================================================
     xdivlambda = x./lambda;
     H = A*diag(xdivlambda)*A';
-    L = chol(H,'lower');
     
     % ====================================================================
     % Affine Step
@@ -61,7 +61,7 @@ while ~Converged && (iter<maxit)
     tmp = (x.*rL + rC)./lambda;
     rhs = -rA + A*tmp;
     
-    dmu = L'\(L\rhs);
+    dmu = H\rhs;
     dx = xdivlambda.*(A'*dmu) - tmp;
     dlambda = -(rC+lambda.*dx)./x;
     
@@ -90,7 +90,7 @@ while ~Converged && (iter<maxit)
     tmp = (x.*rL + rC)./lambda;
     rhs = -rA + A*tmp;
     
-    dmu = L'\(L\rhs);
+    dmu = H\rhs;
     dx = xdivlambda.*(A'*dmu) - tmp;
     dlambda = -(rC+lambda.*dx)./x;
     

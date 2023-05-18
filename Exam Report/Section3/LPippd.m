@@ -57,7 +57,7 @@ while ~Converged && (iter<maxit)
     tmp = (x.*rL + rC)./lambda;
     rhs = -rA + A*tmp;
     
-    dmu = U\(L\rhs);
+    dmu = H\rhs;
     dx = xdivlambda.*(A'*dmu) - tmp;
     dlambda = -(rC+lambda.*dx)./x;
     
@@ -86,7 +86,7 @@ while ~Converged && (iter<maxit)
     tmp = (x.*rL + rC)./lambda;
     rhs = -rA + A*tmp;
     
-    dmu = U\(L\rhs);
+    dmu = H\rhs;
     dx = xdivlambda.*(A'*dmu) - tmp;
     dlambda = -(rC+lambda.*dx)./x;
     

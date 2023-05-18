@@ -235,9 +235,9 @@ state = 1000;
 %rand('state',state);
 
 g = rand(n,1);
-Aeq = randn(meq,n);
+Aeq = randn(meq,n)*100;
 beq = rand(meq,1);
-A = randn(miq,n);
+A = randn(miq,n)*100;
 clb = -10*rand(miq,1);
 cub = 10*rand(miq,1);
 lb = -5*rand(n,1);
@@ -269,7 +269,7 @@ lb = bbar_new(1+meq+2*miq+n:meq+2*miq+2*n);
 g = Abar'*lambda + mu;
 
 % Then try to solve the system
-[xlp,info,mulp,lambdalp,iter] = LPippd(g,Abar,bbar_new,ones(n_new,1));
+[xlp,info,mulp,lambdalp,iter] = LP_InteriorPointPrimalDual(g,sparse(Abar),bbar_new,ones(n_new,1));
 
 if info
     X = max(abs(xlp-x))
