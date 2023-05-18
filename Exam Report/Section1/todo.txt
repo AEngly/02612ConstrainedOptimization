@@ -2,6 +2,4 @@ Overall refactor driver file to look similar to the rest
 1.5
     - refactor speed test to only involve factorization and solving
 1.6
-	- missing
-	- Suggest to test very sparse problems
-	- suggest to test very dense problems
+

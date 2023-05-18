@@ -6,7 +6,6 @@
 2.5 
     - Could make sense to add another path plot
 
-    - optionally remove linprog implementation, and increase big number in huber fitting
 2.7
     - Could make sense to add another path plot
 2.8

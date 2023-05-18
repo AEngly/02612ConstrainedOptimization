@@ -173,7 +173,8 @@ optimoptions('fmincon','Display', 'iter', 'SpecifyObjectiveGradient', true, 'Tol
 % SOLUTION: CasADi with IPOPT
 
 % Uncomment on MacOS with M1 processor
-addpath('./../OptimizationSoftware/casadi-3.6.2-osx64-matlab2018b');
+%addpath('./../OptimizationSoftware/casadi-3.6.2-osx64-matlab2018b');
+addpath('./../OptimizationSoftware/casadi-3.6.2-linux64-matlab2018b');
 
 % OBS: The solver might be blocked by your operating system. Go to security
 % settings to fix this.
