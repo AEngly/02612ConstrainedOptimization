@@ -209,7 +209,9 @@ options.initialBasis = [];
 
 % This section contains tests for adjusted general QP solvers.
 % The adjusted implementation are found is separate files named:
-% XXXXXXXXXXXXXXX
+% QP_InteriorPointPDPC_adjusted.m
+
+
 
 %% 3.6) Testing of primal-dual interior point tailored for general LP
 
