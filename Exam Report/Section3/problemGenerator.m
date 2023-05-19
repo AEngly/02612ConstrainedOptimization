@@ -41,12 +41,12 @@ function [f,A,b,C,dl,du,l,u,solution] = problemGenerator(problemName,parameters)
         if ~sparse
             C = full(C);
         end
-        dl = -3*rand(m,1);
-        du = 3*rand(m,1);
+        dl = -rand(m,1);
+        du = rand(m,1);
 
         % Create empty upper and lower bounds for x, as x is unconstrained
-        l = -3*rand(n,1);
-        u = 3*rand(n,1);
+        l = -rand(n,1);
+        u = rand(n,1);
         f = randn(n,1);
         solution = struct();
         solution.primal = [];

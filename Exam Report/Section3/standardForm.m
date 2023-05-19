@@ -115,6 +115,20 @@ function [Abar, bbar, gbar, information] = standardForm(g,Aeq,beq,A,cub,clb,lb,u
     % Construct the program (with surplus and artificial variables)
     Abar = [row1; row2; row3; row4; row5];
     bbar = [-beq; -cub; clb; -ub; lb];
-    gbar = gbar;
+
+    % Save dimensions of matrix
+    if information.doubleX
+        information.n = 2*n + slackAll;
+        information.m = meq + slackAll;
+        information.meq = meq;
+        information.miq = miq;
+        information.nOriginal = n;
+    else
+        information.n = n + slackAll;
+        information.m = meq + slackAll;
+        information.meq = meq;
+        information.miq = miq;
+        information.nOriginal = n;    
+    end
 
 end

@@ -34,7 +34,7 @@ residual = zeros(l,6);
 j = 1;
 
 for i = problem_sizes
-    [H,g,A,b,x,lambda] = updated_GeneratorECQP(i,alpha,beta,density);
+    [H,g,A,b,x,lambda] = GeneratorECQP(i,alpha,beta,density);
     [xstar] = EqualityQPSolverLUdense(H, g, A, b);
     residual(j,1) = norm(x-xstar);
     [xstar] = EqualityQPSolverLUsparse(H, g, A, b);
@@ -97,7 +97,7 @@ k = 1;
 for beta = betas
     j = 1;
     for i = problem_sizes
-        [H,g,A,b,x,lambda] = updated_GeneratorECQP(i,alpha,beta,density);
+        [H,g,A,b,x,lambda] = GeneratorECQP(i,alpha,beta,density);
     [xstar] = EqualityQPSolverLUdense(H, g, A, b);
     residuals(k,j,1) = norm(x-xstar);
     [xstar] = EqualityQPSolverLUsparse(H, g, A, b);
