@@ -350,8 +350,7 @@ for i = problem_sizes
     % Display
     %fprintf('Problem size: %d\n', i);
 
-   
-
+  
     for k = 1:smoother
 
         [H,g,A,b] = GeneratorDenseECQP(i,beta,density);
