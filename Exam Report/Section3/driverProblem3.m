@@ -363,3 +363,187 @@ end
 % We should also provide statistics from scalable problems:
 % 1) Size of problem (n) on x-axis, and time-to-completion on y-axis.
 
+%% 3.6.1 Implementation of Primal-Dual Algorithm for LP (TEST 1)
+
+parameters = struct();
+[g,A,b,C,clb,cub,lb,ub,solution] = problemGenerator("Slides (page 9/27) Linear Optimization Simplex", parameters);
+
+% Then try implementation
+options = struct();
+[x1,fval1,exitflag1,output1,lambda1] = LP_InteriorPointPrimalDual(g,A,b,C,cub,clb,lb,ub,options);
+
+% We need some restructuring for linprog
+optionsLinprog = struct();
+optionsLinprog.Display = 'off';
+Aineq = [C; -C];
+bineq = [cub; -clb];
+[x2,fval2,exitflag2,output2,lambda2] = linprog(g,Aineq,bineq,A,-b,lb,ub,optionsLinprog);
+
+% Prepare software test
+tests = 0;
+totalTests = 6;
+
+fprintf("\nComparison of solutions:\n");
+if norm(x1-x2,2) < sqrt(eps) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same primal variables.\n");
+    tests = tests + 1;
+end
+if norm(fval1-fval2,2) < sqrt(eps) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same objective value.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.lower-lambda2.lower,2) < sqrt(eps) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for lower bounds.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.upper-lambda2.upper,2) < sqrt(eps) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for upper bounds.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.eqlin-lambda2.eqlin,2) < sqrt(eps) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for equality constraints.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.ineqlin-lambda2.ineqlin,2) < sqrt(eps)  
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for inequality constraints.\n");
+    tests = tests + 1;
+end
+fprintf("\nStatus on tests:\n");
+fprintf("Our solver passes %d/%d tests.\n", tests, totalTests);
+
+%% 3.6.2 Implementation of Primal-Dual Algorithm for LP (TEST 2)
+
+parameters = struct();
+parameters.n = 200;
+parameters.beta = 10;
+parameters.density = 0.15;
+parameters.sparse = true;
+[g,A,b,C,clb,cub,lb,ub,solution] = problemGenerator("RandomLP", parameters);
+
+% Then try implementation
+options = struct();
+[x1,fval1,exitflag1,output1,lambda1] = LP_InteriorPointPrimalDual(g,A,b,C,cub,clb,lb,ub,options);
+
+% We need some restructuring for linprog
+optionsLinprog = struct();
+optionsLinprog.Display = 'off';
+Aineq = [C; -C];
+bineq = [cub; -clb];
+[x2,fval2,exitflag2,output2,lambda2] = linprog(g,Aineq,bineq,A,-b,lb,ub,optionsLinprog);
+
+% Prepare software test
+tests = 0;
+totalTests = 6;
+sensitivity = 1e-4;
+
+fprintf("\nComparison of solutions:\n");
+if norm(x1-x2,2) < sensitivity
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same primal variables.\n");
+    tests = tests + 1;
+end
+if norm(fval1-fval2,2) < sensitivity
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same objective value.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.lower-lambda2.lower,2) < sensitivity
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for lower bounds.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.upper-lambda2.upper,2) < sensitivity
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for upper bounds.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.eqlin-lambda2.eqlin,2) < sensitivity
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for equality constraints.\n");
+    tests = tests + 1;
+end
+if norm(lambda1.ineqlin-lambda2.ineqlin,2) < sensitivity 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same duals for inequality constraints.\n");
+    tests = tests + 1;
+end
+fprintf("\nStatus on tests:\n");
+fprintf("Our solver passes %d/%d tests.\n", tests, totalTests);
+
+
+%% 3.6.3 Implementation of Primal-Dual Algorithm for LP (TEST 3)
+
+n = 20:20:500;
+betas = 1:1:2;
+xdiff = zeros(length(betas),length(n));
+T1 = zeros(length(betas),length(n));
+T2 = zeros(length(betas),length(n));
+plots = [];
+labels = [];
+timeLinprog = [];
+timeOwn = [];
+
+fprintf("--- Creating plots for problem 3.6 --- \n");
+
+hold on
+for j=1:1:length(betas)
+    for i=1:length(n)
+    
+        fprintf("Running instance for (beta,n) = (%d,%d).\n",betas(j),n(i));
+    
+        parameters = struct();
+        parameters.n = n(i);
+        parameters.beta = betas(j);
+        parameters.density = 0.15;
+        parameters.sparse = true;
+        [g,A,b,C,clb,cub,lb,ub,solution] = problemGenerator("RandomLP", parameters);
+        
+        % Then try implementation
+        options = struct();
+        startOwn = cputime;
+        [x1,fval1,exitflag1,output1,lambda1] = LP_InteriorPointPrimalDual(g,A,b,C,cub,clb,lb,ub,options);
+        totalOwn = cputime - startOwn;
+        
+        % We need some restructuring for linprog
+        optionsLinprog = struct();
+        optionsLinprog.Display = 'off';
+        Aineq = [C; -C];
+        bineq = [cub; -clb];
+        startLinprog = cputime;
+        [x2,fval2,exitflag2,output2,lambda2] = linprog(g,Aineq,bineq,A,-b,lb,ub,optionsLinprog);
+        totalLinprog = cputime - startLinprog;
+        
+        % Prepare software test
+        xdiff(j,i) = log10(norm(x1-x2,2));
+        T1(j,i) = [timeOwn totalOwn];
+        T2(j,i) = [timeLinprog totalLinprog];
+    
+    end
+
+    labels = [labels "Tests with \beta = " + sprintf('%0.0f', betas(j))];
+
+end
+
+hold on
+
+plot(n,xdiff,'LineWidth',2);
+legend({labels(1), labels(2)},'Location','Best','FontSize',10);
+xlabel('$n$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('log$_{10}(\| \epsilon \|_{2})$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+saveas(gcf,'./Plots/361_PDIPforLP.png')
+
+hold off
+
+close;
+
+hold on
+
+T1 = T1(end,:);
+T2 = T2(end,:);
+T2(T2 == 0) = min(T2(T2 ~= 0));
+plot(n,log10(T1),'LineWidth',2)
+plot(n,log10(T2),'LineWidth',2)
+legend({'Own implementation (\beta = 2)', 'MATLABs linprog (\beta = 2)'},'Location','Best','FontSize',10)
+xlabel('$n$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
+ylabel('CPU time [log$_{10}$(seconds)]','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
+saveas(gcf,'./Plots/362_PDIPforLP.png')
+
+hold off
+    
+close;
+
+
