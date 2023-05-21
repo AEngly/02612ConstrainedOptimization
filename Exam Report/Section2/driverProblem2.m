@@ -419,13 +419,14 @@ for n = problem_sizes
     cpu_t(j,2) = toc;
     residual(j,2) = norm(x-xstar);
     
+    %{
     [H,g,A,b,C,dl,du,l,u] = GeneratorHuberFittingQP_bn(n,beta,density);
     x = quadprog(H,g,[-C'; C'],[-dl;du],A',-b,l,u,[],options_ip);
     tic;
     [xstar, iterations(j,3)] = QP_InteriorPointPDPC(H, g, A, b, C, dl, du, l, u, maxiter);
     cpu_t(j,3) = toc;
     residual(j,3) = norm(x-xstar);
-
+    %}
     j = j + 1;
 end
 

@@ -94,8 +94,8 @@ for i = problem_sizes
     j = j + 1;
 end
 
-res_x = log(res_x);
-res_l = log(res_l);
+%res_x = log(res_x);
+%res_l = log(res_l);
 
 hold on
 scatter(problem_sizes,res_x(:,1),200, '.','LineWidth',2);
@@ -106,7 +106,8 @@ scatter(problem_sizes,res_x(:,5), '*','LineWidth',2);
 scatter(problem_sizes,res_x(:,6), 's','LineWidth',2);
 legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','southeast')
 xlabel("n");
-ylabel("log(residuals)");
+ylabel("residuals");
+set(gca,'yscale','log');
 hold off
 saveas(gcf,'./Plots/1511_Residuals_x.png')
 close;
@@ -120,7 +121,8 @@ scatter(problem_sizes,res_l(:,5), '*','LineWidth',2);
 scatter(problem_sizes,res_l(:,6), 's','LineWidth',2);
 legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','southeast')
 xlabel("n");
-ylabel("log(residuals)");
+ylabel("residuals");
+set(gca,'yscale','log');
 hold off
 saveas(gcf,'./Plots/1511_Residuals_lambda.png')
 close;
@@ -163,17 +165,17 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
-saveas(gcf,'./Plots/152_PerformanceBeta015.png');
+saveas(gcf,'./Plots/1521_PerformanceBeta015.png');
 close;
 
 %% 1.5.2) Speed Testing with Random Generator (beta = 0.30)
@@ -214,17 +216,17 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
-saveas(gcf,'./Plots/152_PerformanceBeta030.png');
+saveas(gcf,'./Plots/1522_PerformanceBeta030.png');
 close;
 
 %% 1.5.2) Speed Testing with Random Generator (beta = 0.50)
@@ -265,17 +267,17 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
-saveas(gcf,'./Plots/152_PerformanceBeta050.png');
+saveas(gcf,'./Plots/1523_PerformanceBeta050.png');
 close;
 
 %% 1.5.2) Speed Testing with Random Generator (beta = 0.75)
@@ -316,17 +318,17 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
-saveas(gcf,'./Plots/152_PerformanceBeta075.png');
+saveas(gcf,'./Plots/1524_PerformanceBeta075.png');
 close;
 
 %% 1.5.2) Speed Testing with Random Generator (beta = 0.90)
@@ -367,17 +369,17 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
-saveas(gcf,'./Plots/152_PerformanceBeta090.png');
+saveas(gcf,'./Plots/1525_PerformanceBeta090.png');
 close;
 
 %% 1.6.1) Testing of Recycle Problem
@@ -445,13 +447,13 @@ end
 hold on
 
     for i=1:7
-        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+        plot(problem_sizes, reshape(mean(TTC(i,:,:),2), [1,j]), 'LineWidth', 2);
     end
     
-    %set(gca,'yscale','log')
-    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'Location','northwest')
+    set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
     xlabel("n")
-    ylabel("CPU time [log(s)]")
+    ylabel("CPU time [s]")
 
 hold off
 
@@ -459,3 +461,135 @@ saveas(gcf,'./Plots/161_RecycleSystem.png');
 close;
 
 
+%% 1.6.3) Generate other test problems to test your equality constrained QP algorithms.
+
+% This section tests our implementation using other test problems. These
+% are stored in files named:
+% 
+%dense problems
+density = 0.95; % 15% must be non-zero
+beta = 0.5;
+n = 500;
+step = 10;
+
+smoother = 10;
+problem_sizes = 50:step:n;
+
+l = size(problem_sizes,2);
+
+TTC = zeros(7,l,smoother);
+TTC_avg = zeros(7,l);
+j = 1;
+
+for i = problem_sizes
+
+    % Display
+    %fprintf('Problem size: %d\n', i);
+
+   
+
+    for k = 1:smoother
+
+        [H,g,A,b] = GeneratorDenseECQP(i,beta,density);
+
+        TTC(1,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUdense");
+        TTC(2,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUsparse");
+        TTC(3,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLdense");
+        TTC(4,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLsparse");
+        TTC(5,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "RangeSpace");
+        TTC(6,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "NullSpace");
+        TTC(7,k,j) = cpuTimer(@quadprog, H,g,[],[],A',-b, [], [], [], options);
+    end
+
+    TTC_avg(1,j) = mean(TTC(1,j,:));
+    TTC_avg(2,j) = mean(TTC(2,j,:));
+    TTC_avg(3,j) = mean(TTC(3,j,:));
+    TTC_avg(4,j) = mean(TTC(4,j,:));
+    TTC_avg(5,j) = mean(TTC(5,j,:));
+    TTC_avg(6,j) = mean(TTC(6,j,:));
+    TTC_avg(7,j) = mean(TTC(6,j,:));
+
+    j = j + 1;
+
+end
+
+figure,
+hold on
+
+    for i=1:6
+        plot(problem_sizes, TTC_avg(i,:), 'LineWidth', 3);
+    end
+    
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.50")
+
+hold off
+
+saveas(gcf,'./Plots/162_ComparisonSolvers_dense_proplem.png')
+
+
+%% sparse problems
+density = 0.01; % 15% must be non-zero
+beta = 0.5;
+n = 500;
+step = 10;
+
+smoother = 10;
+problem_sizes = 50:step:n;
+
+l = size(problem_sizes,2);
+
+TTC = zeros(7,l,smoother);
+TTC_avg = zeros(7,l);
+j = 1;
+
+for i = problem_sizes
+
+    % Display
+    %fprintf('Problem size: %d\n', i);
+
+  
+    for k = 1:smoother
+
+        [H,g,A,b] = GeneratorDenseECQP(i,beta,density);
+
+        TTC(1,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUdense");
+        TTC(2,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUsparse");
+        TTC(3,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLdense");
+        TTC(4,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLsparse");
+        TTC(5,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "RangeSpace");
+        TTC(6,j,k) = cpuTimer(@EqualityQPSolver, H, g, A, b, "NullSpace");
+        TTC(7,k,j) = cpuTimer(@quadprog, H,g,[],[],A',-b, [], [], [], options);
+    end
+
+    TTC_avg(1,j) = mean(TTC(1,j,:));
+    TTC_avg(2,j) = mean(TTC(2,j,:));
+    TTC_avg(3,j) = mean(TTC(3,j,:));
+    TTC_avg(4,j) = mean(TTC(4,j,:));
+    TTC_avg(5,j) = mean(TTC(5,j,:));
+    TTC_avg(6,j) = mean(TTC(6,j,:));
+    TTC_avg(7,j) = mean(TTC(6,j,:));
+
+    j = j + 1;
+
+end
+
+figure,
+hold on
+
+    for i=1:6
+        plot(problem_sizes, TTC_avg(i,:), 'LineWidth', 3);
+    end
+    
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
+    xlabel("Problemsize - n")
+    ylabel("CPU time [s]")
+    title("\beta 0.50")
+
+hold off
+
+saveas(gcf,'./Plots/163_ComparisonSolvers_sparse_proplem.png')

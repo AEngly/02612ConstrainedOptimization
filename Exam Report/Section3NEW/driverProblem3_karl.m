@@ -211,7 +211,53 @@ options.initialBasis = [];
 % The adjusted implementation are found is separate files named:
 % QP_InteriorPointPDPC_adjusted.m
 
+%% test IP
+parameters = struct();
+parameters.n = 5;
+parameters.beta = 7;
+parameters.density = 0.15;
+parameters.sparse = false;
+[g,A,b,C,dl,du,l,u,solution] = problemGenerator("RandomLP", parameters);
 
+% Run our implementation
+options = struct();
+options.maxIterations = 100;
+options.verbose = 1;
+options.initialBasis = [];
+[x1,k,x_k,y,z,s,fval1,info] = QP_InteriorPointPDPC_adjusted_2(g,A',b,C',dl,du,l,u,options.maxIterations);
+
+% Run linprog
+optionsLinprog = struct();
+optionsLinprog.Display = 'off';
+Aineq = [-C; C];
+bineq = [-dl; du];
+[x2,fval2,exitflag2,output2,lambda2] = linprog(g,Aineq,bineq,[],[],l,u,optionsLinprog);
+H = 1e-3*eye(parameters.n);
+[x3,fval2,exitflag2,output2,lambda2] = quadprog(H,g,Aineq,bineq,[],[],l,u,[],optionsLinprog);
+
+% Prepare software test
+tests = 0;
+totalTests = 2;
+
+fprintf("\nComparison of solutions:\n");
+if norm(x1-x2,2) < (1e-8) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same primal variables.\n");
+    tests = tests + 1;
+end
+if norm(fval1-fval2,2) < (1e-8) 
+    fprintf("Our implementation 'simplexCore.m' and 'linprog' reaches the same objective value.\n");
+    tests = tests + 1;
+end
+
+fprintf("\nStatus on tests:\n");
+fprintf("Our solver passes %d/%d tests.\n", tests, totalTests);
+
+x1
+x2
+norm(x2-x1)
+norm(x3-x1)
+norm(x1)
+k
 
 %% 3.6) Testing of primal-dual interior point tailored for general LP
 

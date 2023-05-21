@@ -390,3 +390,81 @@ hold on
 hold off
 
 saveas(gcf,'./Plots/162_ComparisonSolvers_sparse_proplem.png')
+
+%% 1.6.1) Testing of Recycle Problem
+
+[H, g, A, b] = RecycleSystem(20);
+[x1, lambda1] = EqualityQPSolver(H, g, A, b, "LUdense");
+[x2, lambda2] = EqualityQPSolver(H, g, A, b, "LUsparse");
+[x3, lambda3] = EqualityQPSolver(H, g, A, b, "LDLdense");
+[x4, lambda4] = EqualityQPSolver(H, g, A, b, "LDLsparse");
+[x5, lambda5] = EqualityQPSolver(H, g, A, b, "RangeSpace");
+[x6, lambda6] = EqualityQPSolver(H, g, A, b, "NullSpace");
+options = optimoptions('quadprog','Display','off');
+[x7,fval,exitflag,output,lambda7] = quadprog(H,g,[],[],A',-b, [], [], [], options);
+
+if norm(x1-x7,2) < 1e-09
+    fprintf("LUdense == quadprog\n");
+end
+if norm(x2-x7,2) < 1e-09
+    fprintf("LUsparse == quadprog\n");
+end
+if norm(x3-x7,2) < 1e-09
+    fprintf("LDLdense == quadprog\n");
+end
+if norm(x4-x7,2) < 1e-09
+    fprintf("LDLsparse == quadprog\n");
+end
+if norm(x5-x7,2) < 1e-09
+    fprintf("RangeSpace == quadprog\n");
+end
+if norm(x6-x7,2) < 1e-09
+    fprintf("NullSpace == quadprog\n");
+end
+
+
+%% 1.6.2) Testing of Recycle Problem
+
+options = optimoptions('quadprog','Display','off');
+
+n = 20;
+step = 25;
+smoother = 3;
+TTC = zeros(7,3,n);
+problem_sizes = step:step:n*step;
+
+for k = 1:smoother
+    j = 0;
+    for i = problem_sizes
+    
+        % Display
+        fprintf('Problem size: %d\n', i);
+        j = j + 1;
+    
+        [H, g, A, b] = RecycleSystem(i);
+        TTC(1,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUdense");
+        TTC(2,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LUsparse");
+        TTC(3,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLdense");
+        TTC(4,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "LDLsparse");
+        TTC(5,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "RangeSpace");
+        TTC(6,k,j) = cpuTimer(@EqualityQPSolver, H, g, A, b, "NullSpace");
+        TTC(7,k,j) = cpuTimer(@quadprog, H,g,[],[],A',-b, [], [], [], options);
+    
+    end
+end
+
+hold on
+
+    for i=1:7
+        plot(problem_sizes, log10(reshape(mean(TTC(i,:,:),2), [1,j])), 'LineWidth', 2);
+    end
+    
+    %set(gca,'yscale','log')
+    legend('LUdense', 'LUsparse', 'LDLdense', 'LDLsparse', 'RangeSpace', 'NullSpace', 'quadprog', 'Location','northwest')
+    xlabel("n")
+    ylabel("CPU time [log(s)]")
+
+hold off
+
+saveas(gcf,'./Plots/163_RecycleSystem.png');
+close;

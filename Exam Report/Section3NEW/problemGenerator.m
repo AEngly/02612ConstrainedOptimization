@@ -36,7 +36,7 @@ function [f,A,b,C,dl,du,l,u,solution] = problemGenerator(problemName,parameters)
 
         % Create empty A and b, as no equality constraints are considered
         b = zeros(0,1);
-        A = zeros(n,0);
+        A = zeros(0,n);
         C = sprandn(m,n,density);
         if ~sparse
             C = full(C);

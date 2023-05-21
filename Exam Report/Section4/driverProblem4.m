@@ -362,7 +362,7 @@ ylim([x2_l x2_u])
 xlabel('$x_{1}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold') 
 ylabel('$x_{2}$','interpreter','latex', 'FontSize',16,'Interpreter','LaTeX','Color','black','FontWeight','bold')
 
-saveas(gcf,'./Plots/SQPLineSearchBFGSInfeasibilityHimmelblau.png')
+saveas(gcf,'./Plots/47SQPLineSearchBFGSInfeasibilityHimmelblau.png')
 
 %% 4.8) Testing of SQP with Trust Region
 

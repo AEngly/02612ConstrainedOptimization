@@ -5,13 +5,13 @@ function [x,k,x_k,y,z,s,fval,info] = QP_InteriorPointPDPC_adjusted(g,A,b,C,dl,du
 % Type: Primal-Dual Predictor-Corrector Interior-Point QP Solver
 %
 % Problem structure:
-%           min     0.5 x' H x + g' x
+%           min     g' x
 %            x
 %           s.t.    A'*x + b = 0
 %                   bl <= C' x <= bu
 %                   l <=    x <= u
 %
-% Syntax: [x, y, info, z, s, iter] = QP_InteriorPointPDPC(H,g,A,b,C,d,x0,y0,z0,s0)
+% Syntax: [x, y, info, z, s, iter] = QP_InteriorPointPDPC(g,A,b,C,d,x0,y0,z0,s0)
 %
 %         info = true   : Converged
 %              = false  : Not Converged
@@ -39,14 +39,13 @@ all = true;
 x_k = zeros(n, maxiter);
 
 % ---------------- Setup tolerances --------------
-tol_L = 1e-14;
-tol_C = 1e-14;
-tol_A = 1e-14;
-tol_mu = 1e-14;
+tol_L = 1e-4;
+tol_C = 1e-4;
+tol_A = 1e-4;
+tol_mu = 1e-4;
 
 % ---------------- Find starting point --------------
 
-H = 1e-3*eye(n);
 %Check problem size
 m = length(b);
 % Set initial guesses for X0, y0, s0 and z0
@@ -62,22 +61,21 @@ s0 = ones(length(dbar),1);
 z0 = ones(length(dbar),1);
 
 % Calculate residuals
-rL = H*x0+g-A*y0-Cbar*z0;
+rL = g-A*y0-Cbar*z0;
 rA = -b-A'*x0;
 rC = s0+dbar-Cbar'*x0;
 rsz = (s0.*z0);
 
 %Compute LDL factorization of modified KKT system
-Czs = Cbar*diag(z0./s0);
-Hbar = H + Czs*Cbar';
-KKT = [ Hbar -A; -A' zeros(m,m)];
-[L,D,p] = ldl(KKT,'lower','vector');
+CzsC = (Cbar*diag(z0./s0)*Cbar')^-1;
+ACzsC = A'*CzsC;
+ACzsCA = ACzsC*A;
+rtemp = rA + ACzsC*rL;
+[L,D,p] = ldl(ACzsCA,'lower','vector');
 
 %Affine direction
-rbarL = rL - Czs * (rC-s0);
-rtemp = [-rbarL; -rA];
-deltaxyaff(p) = L'\( D \(L\rtemp(p)));
-deltaxaff = deltaxyaff(1:n)';
+deltayaff(p) = L'\( D \(L\rtemp(p)));
+deltaxaff = CzsC*(-rL+A*deltayaff'+Cbar*(diag(z0./s0)*(rC-s0)));
 deltazaff = -diag(z0./s0)*Cbar'*deltaxaff + diag(z0./s0)*(rC-s0);
 deltasaff = -s0 -diag( s0./z0)*deltazaff;
 
@@ -92,7 +90,7 @@ s = max(ones(length(s0),1),abs(s0+deltasaff));
 
 
 % Calculate residuals
-rL = H*x+g-A*y-Cbar*z;
+rL = g-A*y-Cbar*z;
 rA = -b-A'*x;
 rC = s+dbar-Cbar'*x;
 rsz = (s.*z);
@@ -113,21 +111,20 @@ terminate = (k > maxiter | norm(rL)<=tol_L & norm(rA)<=tol_A & norm(rC)<=tol_C &
 while ~terminate
     k= k+1;
     %disp(k);
-    % Compute LDL factorization of modified KKT system
-    Czs = Cbar*diag(z./s);
-    Hbar = H + Czs*Cbar';
-    % Book mentions modified Cholesky here??
-    KKT = [ Hbar -A; -A' zeros(m,m)];
-    [L,D,p] = ldl(KKT,'lower','vector');
 
+    %Compute LDL factorization of modified KKT system
+    Czs = Cbar*diag(z./s);
+    CzsC = (Czs*Cbar')^-1;
+    ACzsC = A'*CzsC;
+    ACzsCA = ACzsC*A;
+    rtemp = rA + ACzsC*rL;
+    [L,D,p] = ldl(ACzsCA,'lower','vector');
+    
     %Affine direction
-    rbarL = rL - Czs * (rC-s);
-    rtemp = [-rbarL; -rA];
-    deltaxyaff(p) = L'\( D \(L\rtemp(p)));
-    deltaxaff = deltaxyaff(1:n)';
-    %deltayaff = deltaxyaff(n+1:end)';
+    deltayaff(p) = L'\( D \(L\rtemp(p)));
+    deltaxaff = CzsC*(-rL+A*deltayaff'+Czs*(rC-s));
     deltazaff = -diag(z./s)*Cbar'*deltaxaff + diag(z./s)*(rC-s);
-    deltasaff = -s -diag( s./z)*deltazaff;
+    deltasaff = -s0 -diag( s./z)*deltazaff;
 
     %compute alpha affine
     idxdeltazaff = find(deltazaff < 0.0);
@@ -141,11 +138,10 @@ while ~terminate
     % Affine-Centering-Correction Direction 
     rbarsz = rsz + deltasaff.*deltazaff-sigma*mu;
     rbarL = rL - Czs * (rC-diag(z)\rbarsz);
-    rtemp =  [-rbarL; -rA];
+    rtemp =  rA + ACzsC*rbarL;
 
-    deltaxy(p) = L'\( D \(L\rtemp(p))); 
-    deltax = deltaxy(1:n)';
-    deltay = deltaxy(n+1:end)';
+    deltay(p) = L'\( D \(L\rtemp(p))); 
+    deltax = CzsC*(-rbarL+A*deltay'+Czs*(rC-s));
     deltaz = -diag(z./s)*Cbar'*deltax + diag(z./s)*(rC-diag(z)\rbarsz);
     deltas = -diag(z)\rbarsz-diag( s./z )*deltaz;
 
@@ -155,10 +151,10 @@ while ~terminate
     alpha = min([1.0 (-z(idxdeltaz)./deltaz(idxdeltaz))' (-s(idxdeltas)./deltas(idxdeltas))']);
 
     %Update iteration
-    nabla = 0.995;
+    nabla = 0.9999;
     alphabar = alpha*nabla;
     x = x + alphabar*deltax;
-    y = y + alphabar*deltay;
+    y = y + alphabar*deltay';
     z = z + alphabar*deltaz;
     s = s + alphabar*deltas;
     
@@ -166,7 +162,7 @@ while ~terminate
         x_k(:,k) = x;
     end
     %calculate residuals
-    rL = H*x+g-A*y-Cbar*z;
+    rL = g-A*y-Cbar*z;
     rA = -b-A'*x;
     rC = s+dbar-Cbar'*x;
     rsz = (s.*z);
