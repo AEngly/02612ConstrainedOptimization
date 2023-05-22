@@ -1,5 +1,29 @@
 function [primal_final, dual_final, solverInformation] = SQPLineSearchBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options)
 
+    % ---------------- DESCRIPTION --------------
+    %
+    % Name: SQPLineSearchBFGS
+    % Type: SQP procedure with Line Search, BFGS and infeasibility handling
+    %
+    % Note: This implementation used 'quadprog' to solve subproblems.
+    %
+    % Problem structure:
+    %           min     f(x)
+    %            x
+    %           s.t.    h(x) = 0
+    %                   gl  <= g(x) <= gu
+    %                   xl  <= x    <= xu
+    %
+    % Syntax: [primal_final, dual_final, solverInformation] = SQPLineSearchBFGS(fun,x0,xlb,xub,clb,cub,nonlcon,options)
+    %
+    %
+    % Created: 21.05.2023
+    % Authors: Andreas Engly (s170303) and Karl Takeuchi-Storm (s130377)
+    %          Compute, Technical University of Denmark
+    %
+    
+    % ---------------- IMPLEMENTATION --------------
+
     % Auxiliary variables
     iter = 0;
     maxit = options.maxit;

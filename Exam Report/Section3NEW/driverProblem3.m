@@ -32,7 +32,7 @@
 % files named: problemGenerator.m
 
 parameters = struct();
-parameters.n = 2;
+parameters.n = 10;
 parameters.beta = 7;
 parameters.density = 0.15;
 parameters.sparse = false;
